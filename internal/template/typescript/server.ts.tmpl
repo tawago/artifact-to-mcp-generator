@@ -27,13 +27,14 @@ enum ToolName {
 }
 
 // Define TypeScript types for contract function parameters and return values
-{{range $funcIndex, $func := .Functions}}
-{{if not $func.IsConstructor}}
-{{if not $func.IsFallback}}
-{{if not $func.IsReceive}}
-{{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+{{- range $funcIndex, $func := .Functions -}}
+{{- if not $func.IsConstructor -}}
+{{- if not $func.IsFallback -}}
+{{- if not $func.IsReceive -}}
+{{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
+
 // Types for {{$func.Name}}
-{{if $func.Inputs}}
+{{- if $func.Inputs }}
 export interface {{$func.Name | title}}Params {
 {{- range $paramIndex, $param := $func.Inputs}}
   {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
@@ -55,9 +56,9 @@ export interface {{$func.Name | title}}Params {
   {{- end}}; // {{$param.Description}}
 {{- end}}
 }
-{{end}}
+{{- end}}
 
-{{if $func.Outputs}}
+{{- if $func.Outputs}}
 export interface {{$func.Name | title}}Result {
 {{- range $outputIndex, $output := $func.Outputs}}
   {{if $output.Name}}{{$output.Name}}{{else}}output{{$outputIndex}}{{end}}: {{if eq $output.Type.BaseType "address" -}}
@@ -79,19 +80,20 @@ export interface {{$func.Name | title}}Result {
   {{- end}};
 {{- end}}
 }
-{{end}}
-{{end}}
-{{end}}
-{{end}}
-{{end}}
-{{end}}
+{{- end}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end}}
 
 // Define input schemas for each function
-{{range $funcIndex, $func := .Functions}}
-{{if not $func.IsConstructor}}
-{{if not $func.IsFallback}}
-{{if not $func.IsReceive}}
-{{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+{{- range $funcIndex, $func := .Functions -}}
+{{- if not $func.IsConstructor -}}
+{{- if not $func.IsFallback -}}
+{{- if not $func.IsReceive -}}
+{{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
+
 const {{$func.Name | title}}Schema = z.object({
 {{- range $paramIndex, $param := $func.Inputs}}
   {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
@@ -113,12 +115,11 @@ const {{$func.Name | title}}Schema = z.object({
   {{- end}},
 {{- end}}
 });
-
-{{end}}
-{{end}}
-{{end}}
-{{end}}
-{{end}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end}}
 
 // Contract configuration
 interface ContractConfig {
@@ -149,7 +150,7 @@ async function initializeContract(config: ContractConfig) {
     
     // Contract ABI
     const contractABI = [
-      {{range $funcIndex, $func := .Functions}}
+      {{- range $funcIndex, $func := .Functions}}
       {
         "name": "{{$func.Name}}",
         "type": "function",
@@ -181,7 +182,7 @@ async function initializeContract(config: ContractConfig) {
         ],
         "stateMutability": "{{$func.StateMutability}}"
       }{{if not (eq $funcIndex (sub (len $.Functions) 1))}},{{end}}
-      {{end}}
+      {{- end}}
     ];
     
     // Create contract instance
@@ -250,11 +251,11 @@ async function main() {
       
       try {
         switch (name) {
-        {{range $funcIndex, $func := .Functions}}
-        {{if not $func.IsConstructor}}
-        {{if not $func.IsFallback}}
-        {{if not $func.IsReceive}}
-        {{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+        {{- range $funcIndex, $func := .Functions -}}
+        {{- if not $func.IsConstructor -}}
+        {{- if not $func.IsFallback -}}
+        {{- if not $func.IsReceive -}}
+        {{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
           case ToolName.{{$func.Name | upper}}: {
             try {
               const {{$func.Name}}Args = {{$func.Name | title}}Schema.parse(args);
@@ -289,11 +290,11 @@ async function main() {
               );
             }
           }
-        {{end}}
-        {{end}}
-        {{end}}
-        {{end}}
-        {{end}}
+        {{- end -}}
+        {{- end -}}
+        {{- end -}}
+        {{- end -}}
+        {{- end}}
           
           default:
             throw new Error(`Unknown tool: ${name}`);
