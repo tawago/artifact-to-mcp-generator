@@ -3,6 +3,9 @@ package template
 import (
         "bytes"
         "fmt"
+        "io/ioutil"
+        "os"
+        "path/filepath"
         "strings"
         "text/template"
 
@@ -11,11 +14,23 @@ import (
 )
 
 // TypeScriptTemplateRenderer renders TypeScript MCP server templates
-type TypeScriptTemplateRenderer struct{}
+type TypeScriptTemplateRenderer struct {
+        // Template directory path
+        templateDir string
+}
 
 // NewTypeScriptTemplateRenderer creates a new TypeScript template renderer
 func NewTypeScriptTemplateRenderer() *TypeScriptTemplateRenderer {
-        return &TypeScriptTemplateRenderer{}
+        // Default to the embedded templates if not specified
+        return &TypeScriptTemplateRenderer{
+                templateDir: filepath.Join("internal", "template", "typescript"),
+        }
+}
+
+// WithTemplateDir sets a custom template directory
+func (r *TypeScriptTemplateRenderer) WithTemplateDir(dir string) *TypeScriptTemplateRenderer {
+        r.templateDir = dir
+        return r
 }
 
 // getFuncMap returns a template FuncMap with custom functions
@@ -43,6 +58,36 @@ func getFuncMap() template.FuncMap {
         }
         
         return funcMap
+}
+
+// loadTemplate loads a template file from the template directory
+func (r *TypeScriptTemplateRenderer) loadTemplate(name string) (string, error) {
+        templatePath := filepath.Join(r.templateDir, name)
+        
+        // Check if the file exists
+        if _, err := os.Stat(templatePath); os.IsNotExist(err) {
+                // Fall back to embedded templates if file doesn't exist
+                switch name {
+                case "package.json.tmpl":
+                        return packageJSONTemplate, nil
+                case "tsconfig.json.tmpl":
+                        return tsconfigJSONTemplate, nil
+                case "server.ts.tmpl":
+                        return serverTSTemplate, nil
+                case "README.md.tmpl":
+                        return readmeTemplate, nil
+                default:
+                        return "", fmt.Errorf("template %s not found", name)
+                }
+        }
+        
+        // Read the template file
+        content, err := ioutil.ReadFile(templatePath)
+        if err != nil {
+                return "", fmt.Errorf("failed to read template %s: %w", name, err)
+        }
+        
+        return string(content), nil
 }
 
 // Render generates a TypeScript MCP server from the IR
@@ -82,7 +127,14 @@ func (r *TypeScriptTemplateRenderer) Render(contract *ir.ContractIR) (map[string
 
 // renderPackageJSON generates the package.json file
 func (r *TypeScriptTemplateRenderer) renderPackageJSON(contract *ir.ContractIR) ([]byte, error) {
-        tmpl, err := template.New("package.json").Funcs(getFuncMap()).Parse(packageJSONTemplate)
+        // Load the template
+        templateContent, err := r.loadTemplate("package.json.tmpl")
+        if err != nil {
+                return nil, err
+        }
+        
+        // Parse the template
+        tmpl, err := template.New("package.json").Funcs(getFuncMap()).Parse(templateContent)
         if err != nil {
                 return nil, err
         }
@@ -98,7 +150,14 @@ func (r *TypeScriptTemplateRenderer) renderPackageJSON(contract *ir.ContractIR) 
 
 // renderTSConfigJSON generates the tsconfig.json file
 func (r *TypeScriptTemplateRenderer) renderTSConfigJSON(contract *ir.ContractIR) ([]byte, error) {
-        tmpl, err := template.New("tsconfig.json").Funcs(getFuncMap()).Parse(tsconfigJSONTemplate)
+        // Load the template
+        templateContent, err := r.loadTemplate("tsconfig.json.tmpl")
+        if err != nil {
+                return nil, err
+        }
+        
+        // Parse the template
+        tmpl, err := template.New("tsconfig.json").Funcs(getFuncMap()).Parse(templateContent)
         if err != nil {
                 return nil, err
         }
@@ -114,7 +173,14 @@ func (r *TypeScriptTemplateRenderer) renderTSConfigJSON(contract *ir.ContractIR)
 
 // renderServerTS generates the main server.ts file
 func (r *TypeScriptTemplateRenderer) renderServerTS(contract *ir.ContractIR) ([]byte, error) {
-        tmpl, err := template.New("server.ts").Funcs(getFuncMap()).Parse(serverTSTemplate)
+        // Load the template
+        templateContent, err := r.loadTemplate("server.ts.tmpl")
+        if err != nil {
+                return nil, err
+        }
+        
+        // Parse the template
+        tmpl, err := template.New("server.ts").Funcs(getFuncMap()).Parse(templateContent)
         if err != nil {
                 return nil, err
         }
@@ -130,49 +196,17 @@ func (r *TypeScriptTemplateRenderer) renderServerTS(contract *ir.ContractIR) ([]
 
 // renderReadme generates the README.md file
 func (r *TypeScriptTemplateRenderer) renderReadme(contract *ir.ContractIR) ([]byte, error) {
-        // Implementation moved to readme.go
-        const readmeTemplate = `# {{.Metadata.Name}} MCP Server
-
-This is a Model Context Protocol (MCP) server for interacting with the {{.Metadata.Name}} smart contract.
-
-## Available Functions
-
-{{- range $funcIndex, $func := .Functions -}}
-{{- if not $func.IsConstructor -}}
-{{- if not $func.IsFallback -}}
-{{- if not $func.IsReceive -}}
-{{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") -}}
-- **{{$func.Name}}**{{if $func.Inputs}} - Parameters: {{range $paramIndex, $param := $func.Inputs}}{{if $paramIndex}}, {{end}}{{$param.Name}} ({{$param.Type}}){{end}}{{end}}{{if $func.Outputs}} - Returns: {{range $outputIndex, $output := $func.Outputs}}{{if $outputIndex}}, {{end}}{{if $output.Name}}{{$output.Name}}{{else}}output{{$outputIndex}}{{end}} ({{$output.Type}}){{end}}{{end}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end }}
-
-## Installation
-
-` + "```bash" + `
-npm install
-` + "```" + `
-
-## Building
-
-` + "```bash" + `
-npm run build
-` + "```" + `
-
-## Running
-
-` + "```bash" + `
-npm start
-` + "```" + `
-`
-
+        // Load the template
+        templateContent, err := r.loadTemplate("README.md.tmpl")
+        if err != nil {
+                return nil, err
+        }
+        
         // Create a template with sprig functions
         tmpl := template.New("README.md").Funcs(getFuncMap())
 
         // Parse the template
-        tmpl, err := tmpl.Parse(readmeTemplate)
+        tmpl, err = tmpl.Parse(templateContent)
         if err != nil {
                 return nil, err
         }
@@ -185,6 +219,9 @@ npm start
 
         return buf.Bytes(), nil
 }
+
+// Fallback templates in case the files don't exist
+// These are kept for backward compatibility
 
 // packageJSONTemplate is the template for package.json
 const packageJSONTemplate = `{
