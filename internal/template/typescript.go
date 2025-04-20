@@ -295,20 +295,19 @@ enum ToolName {
 }
 
 // Define input schemas for each function
-{{range $funcIndex, $func := .Functions}}
-{{if not $func.IsConstructor}}
-{{if not $func.IsFallback}}
-{{if not $func.IsReceive}}
+{{- range $funcIndex, $func := .Functions -}}
+{{- if not $func.IsConstructor -}}
+{{- if not $func.IsFallback -}}
+{{- if not $func.IsReceive }}
 const {{$func.Name | title}}Schema = z.object({
 {{- range $func.Inputs}}
   {{.Name}}: z.string().describe("{{.Description}}"),
 {{- end}}
 });
-
-{{end}}
-{{end}}
-{{end}}
-{{end}}
+{{end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
 
 // Initialize the contract
 async function initializeContract() {
@@ -320,7 +319,7 @@ async function initializeContract() {
   
   // Contract ABI
   const contractABI = [
-    {{range $funcIndex, $func := .Functions}}
+    {{- range $funcIndex, $func := .Functions }}
     {
       "name": "{{$func.Name}}",
       "type": "function",
@@ -352,7 +351,7 @@ async function initializeContract() {
       ],
       "stateMutability": "{{$func.StateMutability}}"
     }{{if not (eq $funcIndex (sub (len $.Functions) 1))}},{{end}}
-    {{end}}
+    {{- end }}
   ];
   
   // Create contract instance
@@ -405,11 +404,11 @@ async function main() {
     
     try {
       switch (name) {
-{{range $funcIndex, $func := .Functions}}
-{{if not $func.IsConstructor}}
-{{if not $func.IsFallback}}
-{{if not $func.IsReceive}}
-{{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+        {{- range $funcIndex, $func := .Functions -}}
+        {{- if not $func.IsConstructor -}}
+        {{- if not $func.IsFallback -}}
+        {{- if not $func.IsReceive -}}
+        {{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
         case ToolName.{{$func.Name | upper}}:
           const {{$func.Name}}Args = {{$func.Name | title}}Schema.parse(args);
           const {{$func.Name}}Result = await contract.{{$func.Name}}(
@@ -431,11 +430,11 @@ async function main() {
               },
             ],
           };
-{{end}}
-{{end}}
-{{end}}
-{{end}}
-{{end}}
+        {{- end -}}
+        {{- end -}}
+        {{- end -}}
+        {{- end -}}
+        {{- end }}
         
         default:
           throw new Error("Unknown tool: " + name);

@@ -2,11 +2,8 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { 
   CallToolRequestSchema, 
   ListToolsRequestSchema, 
-  Tool, 
-  ToolInput, 
-  TextContent 
 } from "@modelcontextprotocol/sdk/types.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/transports/stdio.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ethers } from "ethers";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
