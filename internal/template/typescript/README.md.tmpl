@@ -1,0 +1,88 @@
+# {{.Metadata.Name}} MCP Server
+
+This is an MCP (Model Context Protocol) server for the {{.Metadata.Name}} smart contract.
+
+## Overview
+
+This server provides LLM access to the {{.Metadata.Name}} smart contract through the Model Context Protocol. It exposes the following contract functions as tools:
+
+{{range $funcIndex, $func := .Functions}}
+{{if not $func.IsConstructor}}
+{{if not $func.IsFallback}}
+{{if not $func.IsReceive}}
+{{if or (eq $func.StateMutability "view") (eq $func.StateMutability "pure")}}
+- **{{$func.Name}}**: {{if $func.Description}}{{$func.Description}}{{else}}{{$func.Name}} function{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+
+## Installation
+
+1. Clone this repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Build the server:
+   ```bash
+   npm run build
+   ```
+
+## Configuration
+
+Set the following environment variables:
+
+- `RPC_URL`: Ethereum RPC URL (default: https://eth.llamarpc.com)
+- `CONTRACT_ADDRESS`: Contract address (default: {{.Metadata.Address}})
+
+## Usage
+
+Start the server:
+
+```bash
+npm start
+```
+
+The server uses stdio for communication with MCP clients.
+
+## Contract Information
+
+- **Name**: {{.Metadata.Name}}
+- **Chain**: {{.Metadata.Chain}}
+- **Address**: {{.Metadata.Address}}
+
+## Available Functions
+{{range $funcIndex, $func := .Functions}}
+{{if not $func.IsConstructor}}
+{{if not $func.IsFallback}}
+{{if not $func.IsReceive}}
+{{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+### {{$func.Name}}
+
+{{if $func.Description}}{{$func.Description}}{{else}}{{$func.Name}} function{{end}}
+
+{{if $func.Inputs}}
+**Parameters:**
+{{range $paramIndex, $param := $func.Inputs}}
+- `{{$param.Name}}` ({{$param.Type.BaseType}}){{if $param.Description}}: {{$param.Description}}{{end}}
+{{end}}
+{{end}}
+
+{{if $func.Outputs}}
+**Returns:**
+{{range $outputIndex, $output := $func.Outputs}}
+- {{if $output.Name}}`{{$output.Name}}`{{else}}Output {{$outputIndex}}{{end}} ({{$output.Type.BaseType}})
+{{end}}
+{{end}}
+
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+
+## License
+
+MIT

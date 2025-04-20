@@ -1,4 +1,7 @@
-Your workspace directory is a github repository called tawago/artifact-to-mcp-generator. We are working on the issue/PR user referenced so please use github api to directly fetch the issue. Usually our issue tickets and PRs contains subtasks. We only work on a subtask one at a time. You MUST avoid working on the next subtasks because we close a session and resume on the subtasks in following sessions. Only commit, push and make a pull request when the user specifically asked. 
+Your workspace directory is a github repository called tawago/artifact-to-mcp-generator. We are working on the issue/PR user referenced so please use github api to directly fetch the issue. Usually our issue tickets and PRs contains subtasks. 
+We ONLY work on a subtask one at a time. You MUST avoid working on the next subtasks WITHOUT an user instruction. 
+
+AVOID to commit, push and make a pull request UNTIL when the user specifically asks. 
 
 Below is the current description of this repository.
 ---
