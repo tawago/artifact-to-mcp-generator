@@ -1,12 +1,13 @@
 package template
 
 import (
-	"bytes"
-	"fmt"
-	"text/template"
+        "bytes"
+        "fmt"
+        "strings"
+        "text/template"
 
-	"github.com/Masterminds/sprig/v3"
-	"github.com/openhands/mcp-generator/internal/ir"
+        "github.com/Masterminds/sprig/v3"
+        "github.com/openhands/mcp-generator/internal/ir"
 )
 
 // TypeScriptTemplateRenderer renders TypeScript MCP server templates
@@ -14,106 +15,175 @@ type TypeScriptTemplateRenderer struct{}
 
 // NewTypeScriptTemplateRenderer creates a new TypeScript template renderer
 func NewTypeScriptTemplateRenderer() *TypeScriptTemplateRenderer {
-	return &TypeScriptTemplateRenderer{}
+        return &TypeScriptTemplateRenderer{}
+}
+
+// getFuncMap returns a template FuncMap with custom functions
+func getFuncMap() template.FuncMap {
+        funcMap := sprig.FuncMap()
+        
+        // Add custom functions
+        funcMap["sub"] = func(a, b int) int {
+                return a - b
+        }
+        
+        funcMap["eq"] = func(a, b interface{}) bool {
+                return a == b
+        }
+        
+        funcMap["upper"] = func(s string) string {
+                return strings.ToUpper(s)
+        }
+        
+        funcMap["title"] = func(s string) string {
+                if len(s) == 0 {
+                        return s
+                }
+                return strings.ToTitle(string(s[0])) + s[1:]
+        }
+        
+        return funcMap
 }
 
 // Render generates a TypeScript MCP server from the IR
 func (r *TypeScriptTemplateRenderer) Render(contract *ir.ContractIR) (map[string][]byte, error) {
-	files := make(map[string][]byte)
+        files := make(map[string][]byte)
 
-	// Generate package.json
-	packageJSON, err := r.renderPackageJSON(contract)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render package.json: %w", err)
-	}
-	files["package.json"] = packageJSON
+        // Generate package.json
+        packageJSON, err := r.renderPackageJSON(contract)
+        if err != nil {
+                return nil, fmt.Errorf("failed to render package.json: %w", err)
+        }
+        files["package.json"] = packageJSON
 
-	// Generate tsconfig.json
-	tsconfigJSON, err := r.renderTSConfigJSON(contract)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render tsconfig.json: %w", err)
-	}
-	files["tsconfig.json"] = tsconfigJSON
+        // Generate tsconfig.json
+        tsconfigJSON, err := r.renderTSConfigJSON(contract)
+        if err != nil {
+                return nil, fmt.Errorf("failed to render tsconfig.json: %w", err)
+        }
+        files["tsconfig.json"] = tsconfigJSON
 
-	// Generate main server file
-	serverTS, err := r.renderServerTS(contract)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render server.ts: %w", err)
-	}
-	files["src/server.ts"] = serverTS
+        // Generate main server file
+        serverTS, err := r.renderServerTS(contract)
+        if err != nil {
+                return nil, fmt.Errorf("failed to render server.ts: %w", err)
+        }
+        files["src/server.ts"] = serverTS
 
-	// Generate README.md
-	readme, err := r.renderReadme(contract)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render README.md: %w", err)
-	}
-	files["README.md"] = readme
+        // Generate README.md
+        readme, err := r.renderReadme(contract)
+        if err != nil {
+                return nil, fmt.Errorf("failed to render README.md: %w", err)
+        }
+        files["README.md"] = readme
 
-	return files, nil
+        return files, nil
 }
 
 // renderPackageJSON generates the package.json file
 func (r *TypeScriptTemplateRenderer) renderPackageJSON(contract *ir.ContractIR) ([]byte, error) {
-	tmpl, err := template.New("package.json").Funcs(sprig.FuncMap()).Parse(packageJSONTemplate)
-	if err != nil {
-		return nil, err
-	}
+        tmpl, err := template.New("package.json").Funcs(getFuncMap()).Parse(packageJSONTemplate)
+        if err != nil {
+                return nil, err
+        }
 
-	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, contract)
-	if err != nil {
-		return nil, err
-	}
+        var buf bytes.Buffer
+        err = tmpl.Execute(&buf, contract)
+        if err != nil {
+                return nil, err
+        }
 
-	return buf.Bytes(), nil
+        return buf.Bytes(), nil
 }
 
 // renderTSConfigJSON generates the tsconfig.json file
 func (r *TypeScriptTemplateRenderer) renderTSConfigJSON(contract *ir.ContractIR) ([]byte, error) {
-	tmpl, err := template.New("tsconfig.json").Funcs(sprig.FuncMap()).Parse(tsconfigJSONTemplate)
-	if err != nil {
-		return nil, err
-	}
+        tmpl, err := template.New("tsconfig.json").Funcs(getFuncMap()).Parse(tsconfigJSONTemplate)
+        if err != nil {
+                return nil, err
+        }
 
-	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, contract)
-	if err != nil {
-		return nil, err
-	}
+        var buf bytes.Buffer
+        err = tmpl.Execute(&buf, contract)
+        if err != nil {
+                return nil, err
+        }
 
-	return buf.Bytes(), nil
+        return buf.Bytes(), nil
 }
 
 // renderServerTS generates the main server.ts file
 func (r *TypeScriptTemplateRenderer) renderServerTS(contract *ir.ContractIR) ([]byte, error) {
-	tmpl, err := template.New("server.ts").Funcs(sprig.FuncMap()).Parse(serverTSTemplate)
-	if err != nil {
-		return nil, err
-	}
+        tmpl, err := template.New("server.ts").Funcs(getFuncMap()).Parse(serverTSTemplate)
+        if err != nil {
+                return nil, err
+        }
 
-	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, contract)
-	if err != nil {
-		return nil, err
-	}
+        var buf bytes.Buffer
+        err = tmpl.Execute(&buf, contract)
+        if err != nil {
+                return nil, err
+        }
 
-	return buf.Bytes(), nil
+        return buf.Bytes(), nil
 }
 
 // renderReadme generates the README.md file
 func (r *TypeScriptTemplateRenderer) renderReadme(contract *ir.ContractIR) ([]byte, error) {
-	tmpl, err := template.New("README.md").Funcs(sprig.FuncMap()).Parse(readmeTemplate)
-	if err != nil {
-		return nil, err
-	}
+        // Implementation moved to readme.go
+        const readmeTemplate = `# {{.Metadata.Name}} MCP Server
 
-	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, contract)
-	if err != nil {
-		return nil, err
-	}
+This is a Model Context Protocol (MCP) server for interacting with the {{.Metadata.Name}} smart contract.
 
-	return buf.Bytes(), nil
+## Available Functions
+
+{{- range $funcIndex, $func := .Functions -}}
+{{- if not $func.IsConstructor -}}
+{{- if not $func.IsFallback -}}
+{{- if not $func.IsReceive -}}
+{{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") -}}
+- **{{$func.Name}}**{{if $func.Inputs}} - Parameters: {{range $paramIndex, $param := $func.Inputs}}{{if $paramIndex}}, {{end}}{{$param.Name}} ({{$param.Type}}){{end}}{{end}}{{if $func.Outputs}} - Returns: {{range $outputIndex, $output := $func.Outputs}}{{if $outputIndex}}, {{end}}{{if $output.Name}}{{$output.Name}}{{else}}output{{$outputIndex}}{{end}} ({{$output.Type}}){{end}}{{end}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+## Installation
+
+` + "```bash" + `
+npm install
+` + "```" + `
+
+## Building
+
+` + "```bash" + `
+npm run build
+` + "```" + `
+
+## Running
+
+` + "```bash" + `
+npm start
+` + "```" + `
+`
+
+        // Create a template with sprig functions
+        tmpl := template.New("README.md").Funcs(getFuncMap())
+
+        // Parse the template
+        tmpl, err := tmpl.Parse(readmeTemplate)
+        if err != nil {
+                return nil, err
+        }
+
+        // Execute the template
+        var buf bytes.Buffer
+        if err := tmpl.Execute(&buf, contract); err != nil {
+                return nil, err
+        }
+
+        return buf.Bytes(), nil
 }
 
 // packageJSONTemplate is the template for package.json
@@ -174,32 +244,34 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 // Define tool names enum
 enum ToolName {
-{{- range .Functions }}
-{{- if not .IsConstructor }}
-{{- if not .IsFallback }}
-{{- if not .IsReceive }}
-  {{ .Name | upper }} = "{{ .Name }}",
-{{- end }}
-{{- end }}
-{{- end }}
+{{- range $funcIndex, $func := .Functions -}}
+{{- if not $func.IsConstructor -}}
+{{- if not $func.IsFallback -}}
+{{- if not $func.IsReceive -}}
+{{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
+  {{$func.Name | upper}} = "{{$func.Name}}",
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end }}
 }
 
 // Define input schemas for each function
-{{- range .Functions }}
-{{- if not .IsConstructor }}
-{{- if not .IsFallback }}
-{{- if not .IsReceive }}
-const {{ .Name | title }}Schema = z.object({
-{{- range .Inputs }}
-  {{ .Name }}: z.{{ template "zodType" .Type }}.describe("{{ .Description }}"),
-{{- end }}
+{{range $funcIndex, $func := .Functions}}
+{{if not $func.IsConstructor}}
+{{if not $func.IsFallback}}
+{{if not $func.IsReceive}}
+const {{$func.Name | title}}Schema = z.object({
+{{- range $func.Inputs}}
+  {{.Name}}: z.string().describe("{{.Description}}"),
+{{- end}}
 });
 
-{{- end }}
-{{- end }}
-{{- end }}
-{{- end }}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
 
 // Initialize the contract
 async function initializeContract() {
@@ -207,39 +279,43 @@ async function initializeContract() {
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "https://eth.llamarpc.com");
   
   // Contract address (can be overridden with environment variable)
-  const contractAddress = process.env.CONTRACT_ADDRESS || "{{ .Metadata.Address }}";
+  const contractAddress = process.env.CONTRACT_ADDRESS || "{{.Metadata.Address}}";
   
   // Contract ABI
   const contractABI = [
-    {{- range .Functions }}
+    {{range $funcIndex, $func := .Functions}}
     {
-      "name": "{{ .Name }}",
+      "name": "{{$func.Name}}",
       "type": "function",
       "inputs": [
-        {{- range .Inputs }}
+        {{- range $index, $param := $func.Inputs -}}
+        {{if $index}},{{end}}
         {
-          "name": "{{ .Name }}",
-          "type": "{{ .Type.BaseType }}"
-          {{- if .Type.IsArray }},
+          "name": "{{$param.Name}}",
+          "type": "{{$param.Type.BaseType}}"
+          {{- if $param.Type.IsArray -}}
+          ,
           "components": []
-          {{- end }}
-        }{{ if not (last $.Functions.Inputs .) }},{{ end }}
-        {{- end }}
+          {{- end -}}
+        }
+        {{- end -}}
       ],
       "outputs": [
-        {{- range .Outputs }}
+        {{- range $index, $param := $func.Outputs -}}
+        {{if $index}},{{end}}
         {
-          "name": "{{ .Name }}",
-          "type": "{{ .Type.BaseType }}"
-          {{- if .Type.IsArray }},
+          "name": "{{$param.Name}}",
+          "type": "{{$param.Type.BaseType}}"
+          {{- if $param.Type.IsArray -}}
+          ,
           "components": []
-          {{- end }}
-        }{{ if not (last $.Functions.Outputs .) }},{{ end }}
-        {{- end }}
+          {{- end -}}
+        }
+        {{- end -}}
       ],
-      "stateMutability": "{{ .StateMutability }}"
-    }{{ if not (last $.Functions .) }},{{ end }}
-    {{- end }}
+      "stateMutability": "{{$func.StateMutability}}"
+    }{{if not (eq $funcIndex (sub (len $.Functions) 1))}},{{end}}
+    {{end}}
   ];
   
   // Create contract instance
@@ -253,7 +329,7 @@ async function main() {
   // Create MCP server
   const server = new Server(
     {
-      name: "{{ .Metadata.Name }}-mcp-server",
+      name: "{{.Metadata.Name}}-mcp-server",
       version: "1.0.0",
     },
     {
@@ -265,21 +341,21 @@ async function main() {
   
   // Register tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    const tools: Tool[] = [
-      {{- range .Functions }}
-      {{- if not .IsConstructor }}
-      {{- if not .IsFallback }}
-      {{- if not .IsReceive }}
-      {{- if eq .StateMutability "view" "pure" }}
+    const tools = [
+      {{- range $funcIndex, $func := .Functions -}}
+      {{- if not $func.IsConstructor -}}
+      {{- if not $func.IsFallback -}}
+      {{- if not $func.IsReceive -}}
+      {{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
       {
-        name: ToolName.{{ .Name | upper }},
-        description: "{{ .Description }}",
-        inputSchema: zodToJsonSchema({{ .Name | title }}Schema) as ToolInput,
+        name: ToolName.{{$func.Name | upper}},
+        description: "{{$func.Description}}",
+        inputSchema: zodToJsonSchema({{$func.Name | title}}Schema),
       },
-      {{- end }}
-      {{- end }}
-      {{- end }}
-      {{- end }}
+      {{- end -}}
+      {{- end -}}
+      {{- end -}}
+      {{- end -}}
       {{- end }}
     ];
     
@@ -292,44 +368,44 @@ async function main() {
     
     try {
       switch (name) {
-        {{- range .Functions }}
-        {{- if not .IsConstructor }}
-        {{- if not .IsFallback }}
-        {{- if not .IsReceive }}
-        {{- if eq .StateMutability "view" "pure" }}
-        case ToolName.{{ .Name | upper }}:
-          const {{ .Name }}Args = {{ .Name | title }}Schema.parse(args);
-          const {{ .Name }}Result = await contract.{{ .Name }}(
-            {{- range $index, $param := .Inputs }}
-            {{- if $index }}, {{ end }}{{ .Name }}Args.{{ .Name }}
-            {{- end }}
+{{range $funcIndex, $func := .Functions}}
+{{if not $func.IsConstructor}}
+{{if not $func.IsFallback}}
+{{if not $func.IsReceive}}
+{{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+        case ToolName.{{$func.Name | upper}}:
+          const {{$func.Name}}Args = {{$func.Name | title}}Schema.parse(args);
+          const {{$func.Name}}Result = await contract.{{$func.Name}}(
+            {{- range $index, $param := $func.Inputs -}}
+            {{if $index}}, {{end}}{{$func.Name}}Args.{{$param.Name}}
+            {{- end -}}
           );
           return {
             content: [
               {
                 type: "text",
-                text: JSON.stringify({{ .Name }}Result, (key, value) => {
+                text: JSON.stringify({{$func.Name}}Result, (key, value) => {
                   // Handle BigInt conversion
                   if (typeof value === 'bigint') {
                     return value.toString();
                   }
                   return value;
                 }, 2),
-              } as TextContent,
+              },
             ],
           };
-        {{- end }}
-        {{- end }}
-        {{- end }}
-        {{- end }}
-        {{- end }}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
         
         default:
-          throw new Error(\`Unknown tool: \${name}\`);
+          throw new Error("Unknown tool: " + name);
       }
     } catch (error) {
       console.error("Error calling tool:", error);
-      throw new Error(\`Error calling \${name}: \${error.message}\`);
+      throw new Error("Error calling " + name + ": " + error.message);
     }
   });
   
@@ -342,77 +418,76 @@ main().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-
-{{- define "zodType" }}
-{{- if eq .BaseType "uint256" "uint8" "uint16" "uint32" "uint64" "uint128" "int256" "int8" "int16" "int32" "int64" "int128" }}
-number()
-{{- else if eq .BaseType "bool" }}
-boolean()
-{{- else if eq .BaseType "string" "address" "bytes" "bytes32" }}
-string()
-{{- else if .IsArray }}
-array(z.{{ template "zodType" (dict "BaseType" .BaseType) }})
-{{- else }}
-string()
-{{- end }}
-{{- end }}
 `
 
 // readmeTemplate is the template for README.md
-const readmeTemplate = `# {{ .Metadata.Name }} MCP Server
+const readmeTemplate = `# {{.Metadata.Name}} MCP Server
 
-This is an MCP (Model Context Protocol) server for the {{ .Metadata.Name }} smart contract.
+This is an MCP (Model Context Protocol) server for the {{.Metadata.Name}} smart contract.
 
 ## Overview
 
-This server provides LLM access to the {{ .Metadata.Name }} smart contract through the Model Context Protocol. It exposes the following contract functions as tools:
+This server provides LLM access to the {{.Metadata.Name}} smart contract through the Model Context Protocol. It exposes the following contract functions as tools:
 
-{{- range .Functions }}
-{{- if not .IsConstructor }}
-{{- if not .IsFallback }}
-{{- if not .IsReceive }}
-{{- if eq .StateMutability "view" "pure" }}
-- **{{ .Name }}**: {{ .Description }}
-{{- end }}
-{{- end }}
-{{- end }}
-{{- end }}
-{{- end }}
+{{range $funcIndex, $func := .Functions}}
+{{if not $func.IsConstructor}}
+{{if not $func.IsFallback}}
+{{if not $func.IsReceive}}
+{{if or (eq $func.StateMutability "view") (eq $func.StateMutability "pure")}}
+- **{{$func.Name}}**: {{$func.Description}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
 
 ## Installation
 
 1. Clone this repository
 2. Install dependencies:
-   \`\`\`bash
+   ` + "```bash" + `
    npm install
-   \`\`\`
+   ` + "```" + `
 3. Build the server:
-   \`\`\`bash
+   ` + "```bash" + `
    npm run build
-   \`\`\`
+   ` + "```" + `
 
 ## Configuration
 
 Set the following environment variables:
 
-- \`RPC_URL\`: Ethereum RPC URL (default: https://eth.llamarpc.com)
-- \`CONTRACT_ADDRESS\`: Contract address (default: {{ .Metadata.Address }})
+- RPC_URL: Ethereum RPC URL (default: https://eth.llamarpc.com)
+- CONTRACT_ADDRESS: Contract address (default: {{.Metadata.Address}})
 
 ## Usage
 
 Start the server:
 
-\`\`\`bash
+` + "```bash" + `
 npm start
-\`\`\`
+` + "```" + `
 
 The server uses stdio for communication with MCP clients.
 
 ## Contract Information
 
-- **Name**: {{ .Metadata.Name }}
-- **Chain**: {{ .Metadata.Chain }}
-- **Address**: {{ .Metadata.Address }}
+- **Name**: {{.Metadata.Name}}
+- **Chain**: {{.Metadata.Chain}}
+- **Address**: {{.Metadata.Address}}
+
+## Available Functions
+{{range $funcIndex, $func := .Functions}}
+{{if not $func.IsConstructor}}
+{{if not $func.IsFallback}}
+{{if not $func.IsReceive}}
+{{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+- **{{$func.Name}}**{{if $func.Inputs}} - Parameters: {{range $paramIndex, $param := $func.Inputs}}{{if $paramIndex}}, {{end}}{{$param.Name}} ({{$param.Type}}){{end}}{{end}}{{if $func.Outputs}} - Returns: {{range $outputIndex, $output := $func.Outputs}}{{if $outputIndex}}, {{end}}{{if $output.Name}}{{$output.Name}}{{else}}output{{$outputIndex}}{{end}} ({{$output.Type}}){{end}}{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
 
 ## License
 

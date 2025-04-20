@@ -6,30 +6,34 @@ The core architecture (artifact → IR → code‑gen templates) is identical ac
 
 ### 1.1 Understanding MCP (Model Context Protocol)
 
-The Model Context Protocol (MCP) is an open protocol that standardizes how applications provide context to Large Language Models (LLMs). It enables LLMs to securely access tools and data sources through a standardized interface.
+MCP (Model Context Protocol) is a standardized protocol for communication between AI models and external tools or services. It enables AI models to interact with various systems, databases, and APIs in a consistent way. MCP servers act as intermediaries that expose functionality to AI models through a well-defined interface.
 
-MCP follows a client-server architecture:
-- **MCP Hosts**: Programs like Claude Desktop, IDEs, or AI tools that want to access data through MCP
-- **MCP Clients**: Protocol clients that maintain 1:1 connections with servers
-- **MCP Servers**: Lightweight programs that expose specific capabilities through the standardized Model Context Protocol
+#### Key MCP Concepts:
+
+1. **Tools**: Functions that an AI model can call to perform specific actions
+2. **Prompts**: Pre-defined templates that help guide the AI model's interactions
+3. **Server**: The MCP server that implements the protocol and handles requests from AI models
 - **Local Data Sources**: Computer files, databases, and services that MCP servers can securely access
-- **Remote Services**: External systems available over the internet that MCP servers can connect to
-
-Key components of an MCP server include:
-1. **Tools**: Functions that LLMs can call to perform actions
-2. **Resources**: Data that can be accessed by LLMs
-3. **Prompts**: Reusable prompt templates for LLMs
 
 Our project aims to automatically generate MCP servers that expose smart contract functionality as tools, making blockchain interactions accessible to LLMs.
 
-### 1.2 MCP Server Structure and Implementation
+#### MCP Server Structure:
 
-MCP servers are typically implemented using the official SDKs (TypeScript, Python, Java, Kotlin, C#). Here's a simplified example of an MCP server structure:
+A typical MCP server consists of:
 
-#### TypeScript Example:
+1. **Server Definition**: Initializes the MCP server and defines available tools
+2. **Tool Implementations**: Functions that implement the actual functionality
+3. **Schema Definitions**: Defines the input/output formats for tools
+4. **Error Handling**: Standardized error responses
+
+#### Example MCP Server (TypeScript):
 ```typescript
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { CallToolRequestSchema, ToolSchema } from "@modelcontextprotocol/sdk/types.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ToolSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
@@ -142,8 +146,13 @@ Go's standard library already includes powerful text templating and JSON handlin
 
 ## 3. Initial Discussions & Design Notes
 
-### 3.1 Artifact‑first strategy
-Same as the master plan: consume ABI/IDL/schema artifacts, normalize into a unified IR, then render MCP servers.
+### 3.1 Our Project: Smart-Contract MCP Server Generator
+
+Our project aims to automatically generate MCP servers for any smart contract by:
+
+1. **Parsing Contract Artifacts**: Reading ABI/IDL files that describe the contract's interface
+2. **Normalizing to IR**: Converting the contract definition to a unified Intermediate Representation
+3. **Generating Code**: Using templates to create a fully functional MCP server
 
 ### 3.2 High‑level architecture
 ```text
@@ -157,7 +166,17 @@ Same as the master plan: consume ABI/IDL/schema artifacts, normalize into a unif
                                                             └──────────────┘
 ```
 
-### 3.3 Recommended libraries / tooling
+### 3.3 Example Generated MCP Server for ERC-20:
+
+The generator will create a TypeScript MCP server that exposes ERC-20 functions like:
+
+- `balanceOf`: Get the token balance of an account
+- `totalSupply`: Get the total token supply
+- `transfer`: Transfer tokens to another account
+- `allowance`: Check the amount of tokens that an owner allowed to a spender
+- `approve`: Approve the spender to spend a specific amount of tokens
+
+### 3.4 Recommended libraries / tooling
 * **JSON** — `encoding/json` stdlib (reflection‑based).  
 * **YAML** — `gopkg.in/yaml.v3`.  
 * **Templating** — `text/template`, with `sprig` for helper funcs.  
