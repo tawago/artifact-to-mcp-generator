@@ -1,0 +1,336 @@
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { 
+  CallToolRequestSchema, 
+  ListToolsRequestSchema, 
+  Tool, 
+  ToolInput, 
+  TextContent 
+} from "@modelcontextprotocol/sdk/types.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/transports/stdio.js";
+import { ethers } from "ethers";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
+// Define tool names enum for all view/pure functions
+enum ToolName {
+{{- range $funcIndex, $func := .Functions -}}
+{{- if not $func.IsConstructor -}}
+{{- if not $func.IsFallback -}}
+{{- if not $func.IsReceive -}}
+{{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
+  {{$func.Name | upper}} = "{{$func.Name}}",
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+}
+
+// Define TypeScript types for contract function parameters and return values
+{{range $funcIndex, $func := .Functions}}
+{{if not $func.IsConstructor}}
+{{if not $func.IsFallback}}
+{{if not $func.IsReceive}}
+{{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+// Types for {{$func.Name}}
+{{if $func.Inputs}}
+export interface {{$func.Name | title}}Params {
+{{- range $paramIndex, $param := $func.Inputs}}
+  {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
+    string
+  {{- else if eq $param.Type.BaseType "uint256" -}}
+    string
+  {{- else if eq $param.Type.BaseType "uint8" -}}
+    number
+  {{- else if eq $param.Type.BaseType "bool" -}}
+    boolean
+  {{- else if eq $param.Type.BaseType "string" -}}
+    string
+  {{- else if eq $param.Type.BaseType "bytes" -}}
+    string
+  {{- else if eq $param.Type.BaseType "bytes32" -}}
+    string
+  {{- else -}}
+    string
+  {{- end}}; // {{$param.Description}}
+{{- end}}
+}
+{{end}}
+
+{{if $func.Outputs}}
+export interface {{$func.Name | title}}Result {
+{{- range $outputIndex, $output := $func.Outputs}}
+  {{if $output.Name}}{{$output.Name}}{{else}}output{{$outputIndex}}{{end}}: {{if eq $output.Type.BaseType "address" -}}
+    string
+  {{- else if eq $output.Type.BaseType "uint256" -}}
+    string
+  {{- else if eq $output.Type.BaseType "uint8" -}}
+    number
+  {{- else if eq $output.Type.BaseType "bool" -}}
+    boolean
+  {{- else if eq $output.Type.BaseType "string" -}}
+    string
+  {{- else if eq $output.Type.BaseType "bytes" -}}
+    string
+  {{- else if eq $output.Type.BaseType "bytes32" -}}
+    string
+  {{- else -}}
+    string
+  {{- end}};
+{{- end}}
+}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+
+// Define input schemas for each function
+{{range $funcIndex, $func := .Functions}}
+{{if not $func.IsConstructor}}
+{{if not $func.IsFallback}}
+{{if not $func.IsReceive}}
+{{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+const {{$func.Name | title}}Schema = z.object({
+{{- range $paramIndex, $param := $func.Inputs}}
+  {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "uint256" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "uint8" -}}
+    z.string().transform((val) => parseInt(val, 10)).describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "bool" -}}
+    z.boolean().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "string" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "bytes" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "bytes32" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else -}}
+    z.string().describe("{{$param.Description}}")
+  {{- end}},
+{{- end}}
+});
+
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+{{end}}
+
+// Contract configuration
+interface ContractConfig {
+  rpcUrl: string;
+  contractAddress: string;
+}
+
+// Error handling class for contract interactions
+class ContractError extends Error {
+  constructor(
+    message: string,
+    public readonly functionName: string,
+    public readonly originalError?: Error
+  ) {
+    super(message);
+    this.name = 'ContractError';
+  }
+}
+
+// Initialize the contract
+async function initializeContract(config: ContractConfig) {
+  try {
+    // Connect to provider
+    const provider = new ethers.JsonRpcProvider(config.rpcUrl);
+    
+    // Contract address
+    const contractAddress = config.contractAddress;
+    
+    // Contract ABI
+    const contractABI = [
+      {{range $funcIndex, $func := .Functions}}
+      {
+        "name": "{{$func.Name}}",
+        "type": "function",
+        "inputs": [
+          {{- range $index, $param := $func.Inputs -}}
+          {{if $index}},{{end}}
+          {
+            "name": "{{$param.Name}}",
+            "type": "{{$param.Type.BaseType}}"
+            {{- if $param.Type.IsArray -}}
+            ,
+            "components": []
+            {{- end -}}
+          }
+          {{- end -}}
+        ],
+        "outputs": [
+          {{- range $index, $param := $func.Outputs -}}
+          {{if $index}},{{end}}
+          {
+            "name": "{{$param.Name}}",
+            "type": "{{$param.Type.BaseType}}"
+            {{- if $param.Type.IsArray -}}
+            ,
+            "components": []
+            {{- end -}}
+          }
+          {{- end -}}
+        ],
+        "stateMutability": "{{$func.StateMutability}}"
+      }{{if not (eq $funcIndex (sub (len $.Functions) 1))}},{{end}}
+      {{end}}
+    ];
+    
+    // Create contract instance
+    return new ethers.Contract(contractAddress, contractABI, provider);
+  } catch (error) {
+    throw new ContractError(
+      `Failed to initialize contract: ${error instanceof Error ? error.message : String(error)}`,
+      'initializeContract',
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+async function main() {
+  try {
+    // Load configuration from environment variables
+    const config: ContractConfig = {
+      rpcUrl: process.env.RPC_URL || "https://eth.llamarpc.com",
+      contractAddress: process.env.CONTRACT_ADDRESS || "{{.Metadata.Address}}",
+    };
+
+    console.log(`Initializing contract at ${config.contractAddress} using RPC ${config.rpcUrl}`);
+    
+    // Initialize the contract
+    const contract = await initializeContract(config);
+    
+    // Create MCP server
+    const server = new Server(
+      {
+        name: "{{.Metadata.Name}}-mcp-server",
+        version: "1.0.0",
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
+      }
+    );
+    
+    // Register tools
+    server.setRequestHandler(ListToolsRequestSchema, async () => {
+      const tools = [
+        {{- range $funcIndex, $func := .Functions -}}
+        {{- if not $func.IsConstructor -}}
+        {{- if not $func.IsFallback -}}
+        {{- if not $func.IsReceive -}}
+        {{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
+        {
+          name: ToolName.{{$func.Name | upper}},
+          description: "{{if $func.Description}}{{$func.Description}}{{else}}{{$func.Name}}{{end}}{{if $func.Inputs}} - Parameters: {{range $paramIndex, $param := $func.Inputs}}{{if $paramIndex}}, {{end}}{{$param.Name}} ({{$param.Type.BaseType}}){{end}}{{end}}{{if $func.Outputs}} - Returns: {{range $outputIndex, $output := $func.Outputs}}{{if $outputIndex}}, {{end}}{{if $output.Name}}{{$output.Name}}{{else}}output{{$outputIndex}}{{end}} ({{$output.Type.BaseType}}){{end}}{{end}}",
+          inputSchema: zodToJsonSchema({{$func.Name | title}}Schema),
+        },
+        {{- end -}}
+        {{- end -}}
+        {{- end -}}
+        {{- end -}}
+        {{- end }}
+      ];
+      
+      return { tools };
+    });
+    
+    // Handle tool calls
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+      
+      try {
+        switch (name) {
+        {{range $funcIndex, $func := .Functions}}
+        {{if not $func.IsConstructor}}
+        {{if not $func.IsFallback}}
+        {{if not $func.IsReceive}}
+        {{if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure")}}
+          case ToolName.{{$func.Name | upper}}: {
+            try {
+              const {{$func.Name}}Args = {{$func.Name | title}}Schema.parse(args);
+              const {{$func.Name}}Result = await contract.{{$func.Name}}(
+                {{- range $index, $param := $func.Inputs -}}
+                {{if $index}}, {{end}}{{$func.Name}}Args.{{$param.Name}}
+                {{- end -}}
+              );
+              
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify({{$func.Name}}Result, (key, value) => {
+                      // Handle BigInt conversion
+                      if (typeof value === 'bigint') {
+                        return value.toString();
+                      }
+                      return value;
+                    }, 2),
+                  },
+                ],
+              };
+            } catch (error) {
+              if (error instanceof z.ZodError) {
+                throw new Error(`Invalid parameters for {{$func.Name}}: ${error.message}`);
+              }
+              throw new ContractError(
+                `Error calling {{$func.Name}}: ${error instanceof Error ? error.message : String(error)}`,
+                '{{$func.Name}}',
+                error instanceof Error ? error : undefined
+              );
+            }
+          }
+        {{end}}
+        {{end}}
+        {{end}}
+        {{end}}
+        {{end}}
+          
+          default:
+            throw new Error(`Unknown tool: ${name}`);
+        }
+      } catch (error) {
+        console.error("Error calling tool:", error);
+        
+        // Format error message for MCP response
+        let errorMessage: string;
+        if (error instanceof ContractError) {
+          errorMessage = `Error calling ${error.functionName}: ${error.message}`;
+        } else {
+          errorMessage = `Error calling ${name}: ${error instanceof Error ? error.message : String(error)}`;
+        }
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: errorMessage }, null, 2),
+            },
+          ],
+        };
+      }
+    });
+    
+    console.log("MCP server initialized, connecting to transport...");
+    
+    // Connect to transport
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    
+    console.log("MCP server connected and ready");
+  } catch (error) {
+    console.error("Fatal error:", error);
+    process.exit(1);
+  }
+}
+
+main();
