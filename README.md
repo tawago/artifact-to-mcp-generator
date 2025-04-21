@@ -38,6 +38,31 @@ generate-mcp --artifact path/to/abi.json --lang ts --output ./my-mcp-server
 generate-mcp --artifact path/to/idl.json --chain solana --lang python --output ./my-mcp-server
 ```
 
+## Testing
+
+The project includes end-to-end tests to verify that the generated MCP servers work correctly with the MCP Inspector.
+
+### Running Tests
+
+```bash
+# Navigate to the tests directory
+cd tests
+
+# Install dependencies
+npm install
+
+# Run the tests
+./run-tests.sh
+```
+
+The tests use Playwright to automate interactions with the MCP Inspector UI and verify that:
+1. The MCP server connects successfully
+2. All tools are listed correctly
+3. Each tool can be executed with valid parameters
+4. Error handling works as expected
+
+See the [tests/README.md](tests/README.md) for more details.
+
 ## Development Status
 
 This project is currently in active development. See the [Phase 1 issue](https://github.com/openhands/mcp-generator/issues/1) for current progress.
