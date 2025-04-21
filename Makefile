@@ -10,7 +10,7 @@ test:
 
 # Run end-to-end tests with Playwright
 e2e-test:
-	cd tests && ./run-tests.sh
+	cd mcp-tests && npm run test:headless
 
 # Run all tests (unit and e2e)
 test-all: test e2e-test
