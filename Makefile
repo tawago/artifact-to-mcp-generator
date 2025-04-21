@@ -1,12 +1,19 @@
-.PHONY: build test clean example
+.PHONY: build test clean example e2e-test
 
 # Build the CLI tool
 build:
 	go build -o bin/generate-mcp ./cmd/generate-mcp
 
-# Run tests
+# Run Go unit tests
 test:
 	go test ./...
+
+# Run end-to-end tests with Playwright
+e2e-test:
+	cd mcp-tests && npm run test:headless
+
+# Run all tests (unit and e2e)
+test-all: test e2e-test
 
 # Clean build artifacts
 clean:
@@ -24,3 +31,7 @@ install:
 # Run the example MCP server
 run-example:
 	cd mcp-server && npm install && npm run build && npm start
+
+# Run the MCP Inspector with the generated server
+run-inspector:
+	npx @modelcontextprotocol/inspector node mcp-server/dist/server.js
