@@ -23,7 +23,9 @@ npx playwright install --with-deps chromium
 
 ## Running Tests
 
-To run the tests:
+### Automated Testing
+
+To run the tests automatically:
 
 ```bash
 ./run-tests.sh
@@ -32,6 +34,24 @@ To run the tests:
 This script will:
 1. Build the MCP server
 2. Run the Playwright tests
+
+### Manual Testing
+
+For manual testing, you can run the MCP server and tests separately:
+
+1. Start the MCP server with the inspector:
+
+```bash
+./run-mcp-server.sh
+```
+
+2. In a separate terminal, run the tests:
+
+```bash
+./run-tests-manual.sh
+```
+
+This approach is useful for debugging as you can see the MCP Inspector UI in action.
 
 ## Test Structure
 
