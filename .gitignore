@@ -26,13 +26,19 @@ go.work.sum
 .env
 
 # Generated MCP server
-mcp-server*
+mcp-server
 
 # Node.js dependencies
 node_modules/
 
 # TypeScript build output
 dist/
+
+# e2e test directory
+mcp-tests/playwright-report/
+mcp-tests/playwright-report/**/*
+mcp-tests/test-results/
+mcp-tests/test-results/**/*
 
 # IDE files
 .idea/

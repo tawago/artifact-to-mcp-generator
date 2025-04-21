@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:50575',
+    baseURL: 'http://localhost:6274',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
@@ -21,8 +21,8 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npx @modelcontextprotocol/inspector node ../mcp-server/dist/server.js',
-    url: 'http://localhost:50575',
-    reuseExistingServer: false,
+    url: 'http://localhost:6274',
+    reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
     timeout: 120000,

@@ -7,7 +7,8 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
-    "test:manual": "playwright test --headed --config=playwright.config.manual.ts",
+    "test:manual": "playwright test --headed",
+    "test:headless": "HEADLESS=true playwright test --reporter=list",
     "start:server": "npx @modelcontextprotocol/inspector node ../mcp-server/dist/server.js"
   },
   "devDependencies": {

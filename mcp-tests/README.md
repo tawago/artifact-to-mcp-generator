@@ -42,7 +42,7 @@ For manual testing, you can run the MCP server and tests separately:
 1. Start the MCP server with the inspector:
 
 ```bash
-./run-mcp-server.sh
+npx @modelcontextprotocol/inspector node ../mcp-server/dist/server.js
 ```
 
 2. In a separate terminal, run the tests:
