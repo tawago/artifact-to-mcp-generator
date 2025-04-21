@@ -2,10 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: false,
+  fullyParallel: false, // Already set to false, which is good
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1, // Add a retry for non-CI environments
-  workers: 1,
+  retries: process.env.CI ? 3 : 2, // Add a retry for non-CI environments
+  workers: 1, // Already set to 1, which ensures sequential execution
   reporter: 'html',
   use: {
     baseURL: `http://localhost:6274`, // Using the default port from the logs

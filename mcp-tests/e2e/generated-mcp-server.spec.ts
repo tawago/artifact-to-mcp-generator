@@ -7,9 +7,14 @@ test.describe('MCP Server Tests', () => {
     
     // Click the Connect button
     await page.getByRole('button', { name: 'Connect' }).click();
-    
+    await expect(page.getByText('Connected')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'List Tools' })).toBeVisible();
     // Click the List Tools button (after connection, this button should be available)
     await page.getByRole('button', { name: 'List Tools' }).click();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await page.close();
   });
 
   test('should list all available tools', async ({ page }) => {
@@ -21,136 +26,68 @@ test.describe('MCP Server Tests', () => {
     }
   });
 
-  test('should execute the name tool', async ({ page }) => {
-    // Click on the name tool (the beforeEach hook already handles connecting and listing tools)
-    await page.getByText('name', { exact: true }).click();
+  // Test all simple tools without parameters using a loop
+  const simpleTools = {
+    'name': 'USD Coin',
+    'totalSupply': '\\d{17,}',
+    'decimals':'\"6\"',
+    'symbol': 'USDC',
+  };
+  
+  for (const [tool, value] of Object.entries(simpleTools)) {
+    test(`should execute the ${tool} tool`, async ({ page }) => {
+      // Click on the tool (the beforeEach hook already handles connecting and listing tools)
+      await page.getByText(tool, { exact: true }).click();
+
+      // Execute the tool
+      await page.getByRole('button', { name: 'Run Tool' }).click();
+      
+      // Wait for the result
+      await expect(page.getByText('Tool Result: Success')).toBeVisible();
+      await expect(page.getByText(RegExp(value))).toBeVisible();
+    });
+  }
+
+  test('should execute the balanceOf tool with a valid address', async ({ page }) => {
+    // Click on the balanceOf tool
+    await page.getByText('balanceOf', { exact: true }).click();
+    
+    // Fill in the address parameter
+    await page.getByLabel('_owner').fill('0x1234567890123456789012345678901234567890');
     
     // Execute the tool
     await page.getByRole('button', { name: 'Run Tool' }).click();
     
     // Wait for the result
     await expect(page.getByText('Tool Result: Success')).toBeVisible();
-    await expect(page.getByText('USD Coin')).toBeVisible();
-  });
-
-  test('should execute the symbol tool', async ({ page }) => {
-    // Click on the symbol tool (the beforeEach hook already handles connecting and listing tools)
-    await page.getByText('symbol', { exact: true }).first().click();
-    
-    // Wait for the tool details to load
-    await page.waitForSelector('text=Get the symbol of the token');
-    
-    // Execute the tool
-    await page.getByRole('button', { name: 'Execute' }).click();
-    
-    // Wait for the result
-    await page.waitForSelector('text=', { timeout: 10000 });
-    
-    
-    
-  });
-
-  test('should execute the decimals tool', async ({ page }) => {
-    // Click on the decimals tool (the beforeEach hook already handles connecting and listing tools)
-    await page.getByText('decimals', { exact: true }).first().click();
-    
-    // Wait for the tool details to load
-    await page.waitForSelector('text=Get the number of decimals the token uses');
-    
-    // Execute the tool
-    await page.getByRole('button', { name: 'Execute' }).click();
-    
-    // Wait for the result
-    await page.waitForSelector('text=', { timeout: 10000 });
-  });
-
-  test('should execute the totalSupply tool', async ({ page }) => {
-    // Navigate to the MCP Inspector
-    await page.goto('/');
-    
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    
-    // Click on the totalSupply tool
-    await page.getByText('totalSupply', { exact: true }).first().click();
-    
-    // Wait for the tool details to load
-    await page.waitForSelector('text=Get the total supply of the token');
-    
-    // Execute the tool
-    await page.getByRole('button', { name: 'Execute' }).click();
-    
-    // Wait for the result (should be a large number)
-    await page.waitForSelector('text="', { timeout: 10000 });
-  });
-
-  test('should execute the balanceOf tool with a valid address', async ({ page }) => {
-    // Navigate to the MCP Inspector
-    await page.goto('/');
-    
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    
-    // Click on the balanceOf tool
-    await page.getByText('balanceOf', { exact: true }).first().click();
-    
-    // Wait for the tool details to load
-    await page.waitForSelector('text=Get the token balance of an account');
-    
-    // Fill in the address parameter
-    await page.getByLabel('_owner').fill('0x1234567890123456789012345678901234567890');
-    
-    // Execute the tool
-    await page.getByRole('button', { name: 'Execute' }).click();
-    
-    // Wait for the result
-    await page.waitForSelector('text="', { timeout: 10000 });
   });
 
   test('should execute the allowance tool with valid addresses', async ({ page }) => {
-    // Navigate to the MCP Inspector
-    await page.goto('/');
-    
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    
     // Click on the allowance tool
-    await page.getByText('allowance', { exact: true }).first().click();
-    
-    // Wait for the tool details to load
-    await page.waitForSelector('text=Get the amount of tokens that an owner allowed to a spender');
+    await page.getByText('allowance', { exact: true }).click();
     
     // Fill in the address parameters
     await page.getByLabel('_owner').fill('0x1234567890123456789012345678901234567890');
     await page.getByLabel('_spender').fill('0x1234567890123456789012345678901234567890');
     
     // Execute the tool
-    await page.getByRole('button', { name: 'Execute' }).click();
+    await page.getByRole('button', { name: 'Run Tool' }).click();
     
     // Wait for the result
-    await page.waitForSelector('text="', { timeout: 10000 });
+    await expect(page.getByText('Tool Result: Success')).toBeVisible();
   });
 
   test('should handle errors for balanceOf with invalid address', async ({ page }) => {
-    // Navigate to the MCP Inspector
-    await page.goto('/');
-    
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    
     // Click on the balanceOf tool
-    await page.getByText('balanceOf', { exact: true }).first().click();
-    
-    // Wait for the tool details to load
-    await page.waitForSelector('text=Get the token balance of an account');
+    await page.getByText('balanceOf', { exact: true }).click();
     
     // Fill in an invalid address
     await page.getByLabel('_owner').fill('invalid-address');
     
     // Execute the tool
-    await page.getByRole('button', { name: 'Execute' }).click();
+    await page.getByRole('button', { name: 'Run Tool' }).click();
     
     // Wait for the error result
-    await page.waitForSelector('text=Error', { timeout: 10000 });
+    await expect(page.getByText(/Error/)).toBeVisible();
   });
 });
