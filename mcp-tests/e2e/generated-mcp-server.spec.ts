@@ -1,71 +1,40 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('MCP Server Tests', () => {
-  test('should connect to the MCP server', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     // Navigate to the MCP Inspector
     await page.goto('/');
     
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
+    // Click the Connect button
+    await page.getByRole('button', { name: 'Connect' }).click();
     
-    // Check if the server is connected
-    const serverInfo = await page.getByText('ERC20 Token').first();
-    await expect(serverInfo).toBeVisible();
-    
-    // Take a screenshot of the connected server
-    await page.screenshot({ path: 'server-connected.png' });
+    // Click the List Tools button (after connection, this button should be available)
+    await page.getByRole('button', { name: 'List Tools' }).click();
   });
 
   test('should list all available tools', async ({ page }) => {
-    // Navigate to the MCP Inspector
-    await page.goto('/');
-    
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    
-    // Check if all expected tools are listed
+    // Check if all expected tools are listed (the beforeEach hook already handles connecting and listing tools)
     const toolNames = ['name', 'totalSupply', 'decimals', 'balanceOf', 'symbol', 'allowance'];
     
     for (const toolName of toolNames) {
-      const toolElement = await page.getByText(toolName, { exact: true }).first();
-      await expect(toolElement).toBeVisible();
+      await expect(await page.getByText(toolName, { exact: true })).toBeVisible();
     }
-    
-    // Take a screenshot of the tools list
-    await page.screenshot({ path: 'tools-list.png' });
   });
 
   test('should execute the name tool', async ({ page }) => {
-    // Navigate to the MCP Inspector
-    await page.goto('/');
-    
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    
-    // Click on the name tool
-    await page.getByText('name', { exact: true }).first().click();
-    
-    // Wait for the tool details to load
-    await page.waitForSelector('text=Get the name of the token');
+    // Click on the name tool (the beforeEach hook already handles connecting and listing tools)
+    await page.getByText('name', { exact: true }).click();
     
     // Execute the tool
-    await page.getByRole('button', { name: 'Execute' }).click();
+    await page.getByRole('button', { name: 'Run Tool' }).click();
     
     // Wait for the result
-    await page.waitForSelector('text=', { timeout: 10000 });
-    
-    // Take a screenshot of the result
-    await page.screenshot({ path: 'name-tool-result.png' });
+    await expect(page.getByText('Tool Result: Success')).toBeVisible();
+    await expect(page.getByText('USD Coin')).toBeVisible();
   });
 
   test('should execute the symbol tool', async ({ page }) => {
-    // Navigate to the MCP Inspector
-    await page.goto('/');
-    
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    
-    // Click on the symbol tool
+    // Click on the symbol tool (the beforeEach hook already handles connecting and listing tools)
     await page.getByText('symbol', { exact: true }).first().click();
     
     // Wait for the tool details to load
@@ -77,18 +46,12 @@ test.describe('MCP Server Tests', () => {
     // Wait for the result
     await page.waitForSelector('text=', { timeout: 10000 });
     
-    // Take a screenshot of the result
-    await page.screenshot({ path: 'symbol-tool-result.png' });
+    
+    
   });
 
   test('should execute the decimals tool', async ({ page }) => {
-    // Navigate to the MCP Inspector
-    await page.goto('/');
-    
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    
-    // Click on the decimals tool
+    // Click on the decimals tool (the beforeEach hook already handles connecting and listing tools)
     await page.getByText('decimals', { exact: true }).first().click();
     
     // Wait for the tool details to load
@@ -99,9 +62,6 @@ test.describe('MCP Server Tests', () => {
     
     // Wait for the result
     await page.waitForSelector('text=', { timeout: 10000 });
-    
-    // Take a screenshot of the result
-    await page.screenshot({ path: 'decimals-tool-result.png' });
   });
 
   test('should execute the totalSupply tool', async ({ page }) => {
@@ -122,9 +82,6 @@ test.describe('MCP Server Tests', () => {
     
     // Wait for the result (should be a large number)
     await page.waitForSelector('text="', { timeout: 10000 });
-    
-    // Take a screenshot of the result
-    await page.screenshot({ path: 'totalSupply-tool-result.png' });
   });
 
   test('should execute the balanceOf tool with a valid address', async ({ page }) => {
@@ -148,9 +105,6 @@ test.describe('MCP Server Tests', () => {
     
     // Wait for the result
     await page.waitForSelector('text="', { timeout: 10000 });
-    
-    // Take a screenshot of the result
-    await page.screenshot({ path: 'balanceOf-tool-result.png' });
   });
 
   test('should execute the allowance tool with valid addresses', async ({ page }) => {
@@ -175,9 +129,6 @@ test.describe('MCP Server Tests', () => {
     
     // Wait for the result
     await page.waitForSelector('text="', { timeout: 10000 });
-    
-    // Take a screenshot of the result
-    await page.screenshot({ path: 'allowance-tool-result.png' });
   });
 
   test('should handle errors for balanceOf with invalid address', async ({ page }) => {
@@ -201,8 +152,5 @@ test.describe('MCP Server Tests', () => {
     
     // Wait for the error result
     await page.waitForSelector('text=Error', { timeout: 10000 });
-    
-    // Take a screenshot of the error
-    await page.screenshot({ path: 'balanceOf-error-result.png' });
   });
 });

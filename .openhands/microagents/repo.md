@@ -1,11 +1,12 @@
 Your workspace directory is a github repository called tawago/artifact-to-mcp-generator. 
 We are working on the issue/PR user referenced so please use github api to directly fetch the issue. 
-Usually our issue tickets and PRs contains subtasks. We only work on a subtask one at a time. 
-You MUST avoid working on the next subtasks because we close a session and resume on the subtasks in following sessions. 
-Only commit, push and make a pull request when the user specifically asked. 
-Only update issue's or PR's body when the user specifically asked.
+Usually our issue tickets and PRs contains subtasks. We only work on a subtask one at a time and pause when the small task is believed to be completed. 
 
+- You MUST avoid working on the next subtasks because we close a session and resume on the subtasks in following sessions. 
+- Only commit, push and make a pull request when the user specifically asked. 
+- Only update issue's or PR's body when the user specifically asked.
 - When you run `go run cmd/generate-mcp/main.go`, make sure that the output dir is `mcp-server`.
+- You MUST absolutely AVOID editting the generated mcp-server directory
 
 Below is the current description of this repository.
 ---

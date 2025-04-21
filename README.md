@@ -36,6 +36,7 @@ generate-mcp --artifact path/to/abi.json --lang ts --output ./my-mcp-server
 
 # Generate a Python MCP server from a Solana IDL
 generate-mcp --artifact path/to/idl.json --chain solana --lang python --output ./my-mcp-server
+
 ```
 
 ## Testing
@@ -45,8 +46,11 @@ The project includes end-to-end tests to verify that the generated MCP servers w
 ### Running Tests
 
 ```bash
+# current command to test generate
+go run cmd/generate-mcp/main.go -a examples/erc20.json --name "ERC20 Token" --address 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+
 # Navigate to the tests directory
-cd tests
+cd mcp-tests
 
 # Install dependencies
 npm install
