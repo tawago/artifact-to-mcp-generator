@@ -18,6 +18,7 @@ var (
         chainType    string
         contractName string
         contractAddr string
+        generateTests bool
 )
 
 func main() {
@@ -34,6 +35,7 @@ func main() {
         rootCmd.Flags().StringVarP(&chainType, "chain", "c", "ethereum", "Blockchain type (ethereum, solana)")
         rootCmd.Flags().StringVarP(&contractName, "name", "n", "", "Contract name")
         rootCmd.Flags().StringVarP(&contractAddr, "address", "d", "", "Contract address")
+        rootCmd.Flags().BoolVarP(&generateTests, "tests", "t", true, "Generate e2e tests for the MCP server")
 
         rootCmd.MarkFlagRequired("artifact")
 
