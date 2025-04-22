@@ -1,0 +1,28 @@
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './inspector-e2e',
+  fullyParallel: false,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 3 : 2,
+  workers: 1,
+  reporter: 'html',
+  use: {
+    baseURL: `http://localhost:6274`,
+    trace: 'on-first-retry',
+    navigationTimeout: 60000,
+    actionTimeout: 30000,
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+  webServer: {
+    command: `npx @modelcontextprotocol/inspector node ./dist/server.js`,
+    url: `http://localhost:6274`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 180000,
+  },
+});

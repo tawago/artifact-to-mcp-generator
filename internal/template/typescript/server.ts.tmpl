@@ -353,9 +353,19 @@ async function main() {
       }
     );
     
-    // Create a signer for state-changing functions
-    const signer = provider.getSigner();
-    const contractWithSigner = contract.connect(signer);
+    // For state-changing functions, we would need a signer
+    // This is commented out as it requires a wallet connection
+    // Uncomment and modify this section if you need to use state-changing functions
+    /*
+    try {
+      // You would need to set up a wallet provider here
+      // const wallet = new ethers.Wallet(privateKey, provider);
+      // const contractWithSigner = contract.connect(wallet);
+      // Use contractWithSigner for state-changing functions
+    } catch (error) {
+      console.warn("Could not get signer, state-changing functions may not work:", error);
+    }
+    */
     
     // Register tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -396,7 +406,7 @@ async function main() {
               const {{$func.Name}}Args = {{$func.Name | title}}Schema.parse(args);
               
               // Handle complex types (arrays and tuples)
-              const processedArgs = [];
+              const processedArgs: any[] = [];
               {{- range $index, $param := $func.Inputs}}
               {{- if or $param.Type.IsArray (eq $param.Type.BaseType "tuple")}}
               // Process {{$param.Name}} ({{$param.Type.BaseType}}{{if $param.Type.IsArray}}{{if $param.Type.ArraySize}}[{{$param.Type.ArraySize}}]{{else}}[]{{end}}{{end}})
