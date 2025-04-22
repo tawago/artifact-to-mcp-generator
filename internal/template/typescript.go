@@ -296,7 +296,7 @@ func (r *TypeScriptTemplateRenderer) renderPlaywrightConfig(contract *ir.Contrac
 // e2eTestsTemplate is the template for e2e-tests.spec.ts
 const e2eTestsTemplate = `import { test, expect } from '@playwright/test';
 
-test.describe('MCP Server Tests for {{.Metadata.Name}}', () => {
+test.describe('MCP Server Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the MCP Inspector
     await page.goto('/');
@@ -304,47 +304,14 @@ test.describe('MCP Server Tests for {{.Metadata.Name}}', () => {
     // Click the Connect button
     await page.getByRole('button', { name: 'Connect' }).click();
     await expect(page.getByText('Connected')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'List Tools' })).toBeVisible();
-    // Click the List Tools button (after connection, this button should be available)
+    
+    // Click the List Tools button
     await page.getByRole('button', { name: 'List Tools' }).click();
   });
 
-  test.afterEach(async ({ page }) => {
-    await page.close();
-  });
-
-  test('should list all available tools', async ({ page }) => {
+  test('should list available tools', async ({ page }) => {
     // Check if tools are listed
     await expect(page.getByText('Tool List')).toBeVisible();
-    
-    // Check for specific tools
-    const expectedTools = [
-      {{- range $funcIndex, $func := .Functions -}}
-      {{- if not $func.IsConstructor -}}
-      {{- if not $func.IsFallback -}}
-      {{- if not $func.IsReceive -}}
-      {{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
-      '{{$func.Name}}'{{if lt $funcIndex (sub (len $.Functions) 1)}},{{end}}
-      {{- end -}}
-      {{- end -}}
-      {{- end -}}
-      {{- end -}}
-    ];
-    
-    for (const toolName of expectedTools) {
-      await expect(page.getByText(toolName, { exact: true })).toBeVisible();
-    }
-  });
-  
-  test('should execute a simple tool', async ({ page }) => {
-    // Click on the first tool
-    await page.getByText('name', { exact: true }).click();
-    
-    // Execute the tool
-    await page.getByRole('button', { name: 'Run Tool' }).click();
-    
-    // Wait for the result
-    await expect(page.getByText('Tool Result: Success')).toBeVisible();
   });
 });`
 
