@@ -120,7 +120,17 @@ func (p *ABIParser) parseFunction(item ABIItem) (ir.Function, error) {
                         if i > 0 {
                                 description += ", "
                         }
-                        description += input.Name + " (" + string(input.Type.BaseType) + ")"
+                        typeStr := string(input.Type.BaseType)
+                        if input.Type.IsArray {
+                                if input.Type.ArraySize > 0 {
+                                        typeStr += fmt.Sprintf("[%d]", input.Type.ArraySize)
+                                } else {
+                                        typeStr += "[]"
+                                }
+                        } else if len(input.Type.Components) > 0 {
+                                typeStr = "tuple"
+                        }
+                        description += input.Name + " (" + typeStr + ")"
                 }
         }
         
@@ -134,7 +144,17 @@ func (p *ABIParser) parseFunction(item ABIItem) (ir.Function, error) {
                         if outputName == "" {
                                 outputName = fmt.Sprintf("output%d", i)
                         }
-                        description += outputName + " (" + string(output.Type.BaseType) + ")"
+                        typeStr := string(output.Type.BaseType)
+                        if output.Type.IsArray {
+                                if output.Type.ArraySize > 0 {
+                                        typeStr += fmt.Sprintf("[%d]", output.Type.ArraySize)
+                                } else {
+                                        typeStr += "[]"
+                                }
+                        } else if len(output.Type.Components) > 0 {
+                                typeStr = "tuple"
+                        }
+                        description += outputName + " (" + typeStr + ")"
                 }
         }
 
@@ -163,6 +183,12 @@ func (p *ABIParser) parseFunction(item ABIItem) (ir.Function, error) {
         if item.Payable {
                 chainData["payable"] = item.Payable
         }
+        
+        // Store original name and signature for overloaded functions
+        if functionName != item.Name {
+                chainData["originalName"] = item.Name
+                chainData["originalSignature"] = signature
+        }
 
         return ir.Function{
                 Name:            functionName,
@@ -180,10 +206,17 @@ func (p *ABIParser) parseFunction(item ABIItem) (ir.Function, error) {
 // parseEvent converts an ABI event item to IR Event
 func (p *ABIParser) parseEvent(item ABIItem) (ir.Event, error) {
         parameters := make([]ir.EventParameter, len(item.Inputs))
+        indexedCount := 0
+        
         for i, input := range item.Inputs {
                 paramType, err := p.parseParameterType(input.Type, input.Components)
                 if err != nil {
                         return ir.Event{}, fmt.Errorf("failed to parse event parameter type: %w", err)
+                }
+                
+                // Count indexed parameters (EVM allows up to 3)
+                if input.Indexed {
+                        indexedCount++
                 }
 
                 parameters[i] = ir.EventParameter{
@@ -201,10 +234,41 @@ func (p *ABIParser) parseEvent(item ABIItem) (ir.Event, error) {
         if item.Anonymous {
                 chainData["anonymous"] = item.Anonymous
         }
+        
+        // Add indexed parameters information
+        chainData["indexedCount"] = indexedCount
+        
+        // Generate a better description that includes indexed parameters
+        description := fmt.Sprintf("%s event", item.Name)
+        if len(parameters) > 0 {
+                description += " - Parameters: "
+                for i, param := range parameters {
+                        if i > 0 {
+                                description += ", "
+                        }
+                        typeStr := string(param.Type.BaseType)
+                        if param.Type.IsArray {
+                                if param.Type.ArraySize > 0 {
+                                        typeStr += fmt.Sprintf("[%d]", param.Type.ArraySize)
+                                } else {
+                                        typeStr += "[]"
+                                }
+                        } else if len(param.Type.Components) > 0 {
+                                typeStr = "tuple"
+                        }
+                        
+                        indexedStr := ""
+                        if param.Indexed {
+                                indexedStr = " (indexed)"
+                        }
+                        
+                        description += param.Name + " (" + typeStr + ")" + indexedStr
+                }
+        }
 
         return ir.Event{
                 Name:        item.Name,
-                Description: fmt.Sprintf("%s event", item.Name),
+                Description: description,
                 Signature:   signature,
                 Parameters:  parameters,
                 ChainData:   chainData,
@@ -349,6 +413,31 @@ func (p *ABIParser) parseParameterType(typeStr string, components []ABIInput) (i
                         return paramType, err
                 }
                 paramType.Components = componentParams
+                
+                // Add additional metadata for complex types
+                chainData := make(map[string]interface{})
+                chainData["isTuple"] = true
+                
+                // Create a type description for the tuple
+                typeDesc := "{"
+                for i, comp := range componentParams {
+                        if i > 0 {
+                                typeDesc += ", "
+                        }
+                        compTypeStr := string(comp.Type.BaseType)
+                        if comp.Type.IsArray {
+                                if comp.Type.ArraySize > 0 {
+                                        compTypeStr += fmt.Sprintf("[%d]", comp.Type.ArraySize)
+                                } else {
+                                        compTypeStr += "[]"
+                                }
+                        }
+                        typeDesc += comp.Name + ": " + compTypeStr
+                }
+                typeDesc += "}"
+                chainData["typeDescription"] = typeDesc
+                
+                paramType.ChainData = chainData
         }
 
         // Handle mapping types (not directly supported in ABI, but we can detect some common patterns)
@@ -363,6 +452,20 @@ func (p *ABIParser) parseParameterType(typeStr string, components []ABIInput) (i
                         valueStart := keyEnd + 2
                         valueEnd := len(paramType.BaseType) - 1 // Exclude closing parenthesis
                         paramType.BaseType = strings.TrimSpace(paramType.BaseType[valueStart:valueEnd])
+                }
+        }
+        
+        // Add array-specific metadata
+        if paramType.IsArray {
+                if paramType.ChainData == nil {
+                        paramType.ChainData = make(map[string]interface{})
+                }
+                paramType.ChainData["isArray"] = true
+                if paramType.ArraySize > 0 {
+                        paramType.ChainData["isFixedArray"] = true
+                        paramType.ChainData["arraySize"] = paramType.ArraySize
+                } else {
+                        paramType.ChainData["isDynamicArray"] = true
                 }
         }
 

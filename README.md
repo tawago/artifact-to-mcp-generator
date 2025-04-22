@@ -1,3 +1,10 @@
+
+---
+
+------ **THIS PROJECT IS STILL WORK IN PROGRESS 🐶** -----
+
+---
+
 # Smart-Contract MCP Server Generator
 
 A tool that generates typed MCP (Model Context Protocol) servers for any deployed smart contract.

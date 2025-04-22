@@ -48,9 +48,11 @@ export interface {{$func.Name | title}}Params {
     string
   {{- else if eq $param.Type.BaseType "bytes32" -}}
     string
+  {{- else if eq $param.Type.BaseType "tuple" -}}
+    {{if $param.Type.ChainData.typeDescription}}{{$param.Type.ChainData.typeDescription}}{{else}}Record<string, any>{{end}}
   {{- else -}}
     string
-  {{- end}}; // {{$param.Description}}
+  {{- end}}{{if $param.Type.IsArray}}{{if $param.Type.ArraySize}}[{{$param.Type.ArraySize}}]{{else}}[]{{end}}{{end}}; // {{$param.Description}}
 {{- end}}
 }
 {{- end}}
@@ -72,9 +74,83 @@ export interface {{$func.Name | title}}Result {
     string
   {{- else if eq $output.Type.BaseType "bytes32" -}}
     string
+  {{- else if eq $output.Type.BaseType "tuple" -}}
+    {{if $output.Type.ChainData.typeDescription}}{{$output.Type.ChainData.typeDescription}}{{else}}Record<string, any>{{end}}
   {{- else -}}
     string
-  {{- end}};
+  {{- end}}{{if $output.Type.IsArray}}{{if $output.Type.ArraySize}}[{{$output.Type.ArraySize}}]{{else}}[]{{end}}{{end}};
+{{- end}}
+}
+{{- end}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end}}
+
+// Define types for payable and nonpayable functions
+{{- range $funcIndex, $func := .Functions -}}
+{{- if not $func.IsConstructor -}}
+{{- if not $func.IsFallback -}}
+{{- if not $func.IsReceive -}}
+{{- if or (eq (printf "%s" $func.StateMutability) "payable") (eq (printf "%s" $func.StateMutability) "nonpayable") }}
+
+// Types for {{$func.Name}}
+{{- if $func.Inputs }}
+export interface {{$func.Name | title}}Params {
+{{- range $paramIndex, $param := $func.Inputs}}
+  {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
+    string
+  {{- else if eq $param.Type.BaseType "uint256" -}}
+    string
+  {{- else if eq $param.Type.BaseType "uint8" -}}
+    number
+  {{- else if eq $param.Type.BaseType "bool" -}}
+    boolean
+  {{- else if eq $param.Type.BaseType "string" -}}
+    string
+  {{- else if eq $param.Type.BaseType "bytes" -}}
+    string
+  {{- else if eq $param.Type.BaseType "bytes32" -}}
+    string
+  {{- else if eq $param.Type.BaseType "tuple" -}}
+    {{if $param.Type.ChainData.typeDescription}}{{$param.Type.ChainData.typeDescription}}{{else}}Record<string, any>{{end}}
+  {{- else -}}
+    string
+  {{- end}}{{if $param.Type.IsArray}}{{if $param.Type.ArraySize}}[{{$param.Type.ArraySize}}]{{else}}[]{{end}}{{end}}; // {{$param.Description}}
+{{- end}}
+{{- if eq (printf "%s" $func.StateMutability) "payable" }}
+  value?: string; // Optional ETH value to send with the transaction (in wei)
+{{- end}}
+}
+{{- else if eq (printf "%s" $func.StateMutability) "payable" }}
+export interface {{$func.Name | title}}Params {
+  value?: string; // Optional ETH value to send with the transaction (in wei)
+}
+{{- end}}
+
+{{- if $func.Outputs}}
+export interface {{$func.Name | title}}Result {
+{{- range $outputIndex, $output := $func.Outputs}}
+  {{if $output.Name}}{{$output.Name}}{{else}}output{{$outputIndex}}{{end}}: {{if eq $output.Type.BaseType "address" -}}
+    string
+  {{- else if eq $output.Type.BaseType "uint256" -}}
+    string
+  {{- else if eq $output.Type.BaseType "uint8" -}}
+    number
+  {{- else if eq $output.Type.BaseType "bool" -}}
+    boolean
+  {{- else if eq $output.Type.BaseType "string" -}}
+    string
+  {{- else if eq $output.Type.BaseType "bytes" -}}
+    string
+  {{- else if eq $output.Type.BaseType "bytes32" -}}
+    string
+  {{- else if eq $output.Type.BaseType "tuple" -}}
+    {{if $output.Type.ChainData.typeDescription}}{{$output.Type.ChainData.typeDescription}}{{else}}Record<string, any>{{end}}
+  {{- else -}}
+    string
+  {{- end}}{{if $output.Type.IsArray}}{{if $output.Type.ArraySize}}[{{$output.Type.ArraySize}}]{{else}}[]{{end}}{{end}};
 {{- end}}
 }
 {{- end}}
@@ -107,9 +183,50 @@ const {{$func.Name | title}}Schema = z.object({
     z.string().describe("{{$param.Description}}")
   {{- else if eq $param.Type.BaseType "bytes32" -}}
     z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "tuple" -}}
+    z.string().or(z.record(z.any())).describe("{{$param.Description}}{{if $param.Type.ChainData.typeDescription}} - Format: {{$param.Type.ChainData.typeDescription}}{{end}}")
   {{- else -}}
     z.string().describe("{{$param.Description}}")
-  {{- end}},
+  {{- end}}{{if $param.Type.IsArray}}.or(z.array(z.any())).describe("{{$param.Description}}{{if $param.Type.ArraySize}} - Fixed size array [{{$param.Type.ArraySize}}]{{else}} - Dynamic array[]{{end}}"){{end}},
+{{- end}}
+});
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end}}
+
+// Define input schemas for payable and nonpayable functions
+{{- range $funcIndex, $func := .Functions -}}
+{{- if not $func.IsConstructor -}}
+{{- if not $func.IsFallback -}}
+{{- if not $func.IsReceive -}}
+{{- if or (eq (printf "%s" $func.StateMutability) "payable") (eq (printf "%s" $func.StateMutability) "nonpayable") }}
+
+const {{$func.Name | title}}Schema = z.object({
+{{- range $paramIndex, $param := $func.Inputs}}
+  {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "uint256" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "uint8" -}}
+    z.string().transform((val) => parseInt(val, 10)).describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "bool" -}}
+    z.boolean().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "string" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "bytes" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "bytes32" -}}
+    z.string().describe("{{$param.Description}}")
+  {{- else if eq $param.Type.BaseType "tuple" -}}
+    z.string().or(z.record(z.any())).describe("{{$param.Description}}{{if $param.Type.ChainData.typeDescription}} - Format: {{$param.Type.ChainData.typeDescription}}{{end}}")
+  {{- else -}}
+    z.string().describe("{{$param.Description}}")
+  {{- end}}{{if $param.Type.IsArray}}.or(z.array(z.any())).describe("{{$param.Description}}{{if $param.Type.ArraySize}} - Fixed size array [{{$param.Type.ArraySize}}]{{else}} - Dynamic array[]{{end}}"){{end}},
+{{- end}}
+{{- if eq (printf "%s" $func.StateMutability) "payable" }}
+  value: z.string().optional().describe("Optional ETH value to send with the transaction (in wei)"),
 {{- end}}
 });
 {{- end -}}
@@ -149,17 +266,25 @@ async function initializeContract(config: ContractConfig) {
     const contractABI = [
       {{- range $funcIndex, $func := .Functions}}
       {
-        "name": "{{$func.Name}}",
+        "name": "{{if $func.ChainData.originalName}}{{$func.ChainData.originalName}}{{else}}{{$func.Name}}{{end}}",
         "type": "function",
         "inputs": [
           {{- range $index, $param := $func.Inputs -}}
           {{if $index}},{{end}}
           {
             "name": "{{$param.Name}}",
-            "type": "{{$param.Type.BaseType}}"
-            {{- if $param.Type.IsArray -}}
+            "type": "{{$param.Type.BaseType}}{{if $param.Type.IsArray}}{{if $param.Type.ArraySize}}[{{$param.Type.ArraySize}}]{{else}}[]{{end}}{{end}}"
+            {{- if eq $param.Type.BaseType "tuple" -}}
             ,
-            "components": []
+            "components": [
+              {{- range $compIndex, $comp := $param.Type.Components -}}
+              {{if $compIndex}},{{end}}
+              {
+                "name": "{{$comp.Name}}",
+                "type": "{{$comp.Type.BaseType}}{{if $comp.Type.IsArray}}{{if $comp.Type.ArraySize}}[{{$comp.Type.ArraySize}}]{{else}}[]{{end}}{{end}}"
+              }
+              {{- end -}}
+            ]
             {{- end -}}
           }
           {{- end -}}
@@ -169,10 +294,18 @@ async function initializeContract(config: ContractConfig) {
           {{if $index}},{{end}}
           {
             "name": "{{$param.Name}}",
-            "type": "{{$param.Type.BaseType}}"
-            {{- if $param.Type.IsArray -}}
+            "type": "{{$param.Type.BaseType}}{{if $param.Type.IsArray}}{{if $param.Type.ArraySize}}[{{$param.Type.ArraySize}}]{{else}}[]{{end}}{{end}}"
+            {{- if eq $param.Type.BaseType "tuple" -}}
             ,
-            "components": []
+            "components": [
+              {{- range $compIndex, $comp := $param.Type.Components -}}
+              {{if $compIndex}},{{end}}
+              {
+                "name": "{{$comp.Name}}",
+                "type": "{{$comp.Type.BaseType}}{{if $comp.Type.IsArray}}{{if $comp.Type.ArraySize}}[{{$comp.Type.ArraySize}}]{{else}}[]{{end}}{{end}}"
+              }
+              {{- end -}}
+            ]
             {{- end -}}
           }
           {{- end -}}
@@ -220,6 +353,20 @@ async function main() {
       }
     );
     
+    // For state-changing functions, we would need a signer
+    // This is commented out as it requires a wallet connection
+    // Uncomment and modify this section if you need to use state-changing functions
+    /*
+    try {
+      // You would need to set up a wallet provider here
+      // const wallet = new ethers.Wallet(privateKey, provider);
+      // const contractWithSigner = contract.connect(wallet);
+      // Use contractWithSigner for state-changing functions
+    } catch (error) {
+      console.warn("Could not get signer, state-changing functions may not work:", error);
+    }
+    */
+    
     // Register tools
     server.setRequestHandler(ListToolsRequestSchema, async () => {
       const tools = [
@@ -230,7 +377,7 @@ async function main() {
         {{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
         {
           name: ToolName.{{$func.Name | upper}},
-          description: "{{if $func.Description}}{{$func.Description}}{{else}}{{$func.Name}}{{end}}{{if $func.Inputs}} - Parameters: {{range $paramIndex, $param := $func.Inputs}}{{if $paramIndex}}, {{end}}{{$param.Name}} ({{$param.Type.BaseType}}){{end}}{{end}}{{if $func.Outputs}} - Returns: {{range $outputIndex, $output := $func.Outputs}}{{if $outputIndex}}, {{end}}{{if $output.Name}}{{$output.Name}}{{else}}output{{$outputIndex}}{{end}} ({{$output.Type.BaseType}}){{end}}{{end}}",
+          description: "{{if $func.Description}}{{$func.Description}}{{else}}{{$func.Name}}{{end}}",
           inputSchema: zodToJsonSchema({{$func.Name | title}}Schema),
         },
         {{- end -}}
@@ -257,11 +404,29 @@ async function main() {
           case ToolName.{{$func.Name | upper}}: {
             try {
               const {{$func.Name}}Args = {{$func.Name | title}}Schema.parse(args);
-              const {{$func.Name}}Result = await contract.{{$func.Name}}(
-                {{- range $index, $param := $func.Inputs -}}
-                {{if $index}}, {{end}}{{$func.Name}}Args.{{$param.Name}}
-                {{- end -}}
-              );
+              
+              // Handle complex types (arrays and tuples)
+              const processedArgs: any[] = [];
+              {{- range $index, $param := $func.Inputs}}
+              {{- if or $param.Type.IsArray (eq $param.Type.BaseType "tuple")}}
+              // Process {{$param.Name}} ({{$param.Type.BaseType}}{{if $param.Type.IsArray}}{{if $param.Type.ArraySize}}[{{$param.Type.ArraySize}}]{{else}}[]{{end}}{{end}})
+              if (typeof {{$func.Name}}Args.{{$param.Name}} === 'string') {
+                try {
+                  processedArgs.push(JSON.parse({{$func.Name}}Args.{{$param.Name}}));
+                } catch (e) {
+                  processedArgs.push({{$func.Name}}Args.{{$param.Name}});
+                }
+              } else {
+                processedArgs.push({{$func.Name}}Args.{{$param.Name}});
+              }
+              {{- else}}
+              processedArgs.push({{$func.Name}}Args.{{$param.Name}});
+              {{- end}}
+              {{- end}}
+              
+              // Call the contract function with the correct name (handling overloads)
+              const functionName = {{if $func.ChainData.originalName}}"{{$func.ChainData.originalName}}"{{else}}"{{$func.Name}}"{{end}};
+              const {{$func.Name}}Result = await contract[functionName](...processedArgs);
               
               return {
                 content: [
