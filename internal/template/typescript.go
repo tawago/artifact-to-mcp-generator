@@ -628,6 +628,30 @@ npm start
 
 The server uses stdio for communication with MCP clients.
 
+## Testing
+
+This server comes with end-to-end tests that verify its functionality using the MCP Inspector.
+
+1. Install Playwright dependencies:
+   ` + "```bash" + `
+   npm run test:install
+   ` + "```" + `
+
+2. Run the tests:
+   ` + "```bash" + `
+   npm test
+   ` + "```" + `
+
+3. View the test report:
+   ` + "```bash" + `
+   npm run test:report
+   ` + "```" + `
+
+4. Run tests with UI:
+   ` + "```bash" + `
+   npm run test:ui
+   ` + "```" + `
+
 ## Contract Information
 
 - **Name**: {{.Metadata.Name}}
