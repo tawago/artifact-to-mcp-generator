@@ -1,0 +1,20 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('MCP Server Tests', () => {
+  test.beforeEach(async ({ page }) => {
+    // Navigate to the MCP Inspector
+    await page.goto('/');
+    
+    // Click the Connect button
+    await page.getByRole('button', { name: 'Connect' }).click();
+    await expect(page.getByText('Connected')).toBeVisible();
+    
+    // Click the List Tools button
+    await page.getByRole('button', { name: 'List Tools' }).click();
+  });
+
+  test('should list available tools', async ({ page }) => {
+    // Check if tools are listed
+    await expect(page.getByText('Tool List')).toBeVisible();
+  });
+});

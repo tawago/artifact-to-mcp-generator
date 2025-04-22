@@ -76,6 +76,10 @@ func (r *TypeScriptTemplateRenderer) loadTemplate(name string) (string, error) {
                         return serverTSTemplate, nil
                 case "README.md.tmpl":
                         return readmeTemplate, nil
+                case "inspector-e2e/e2e-tests.spec.ts.tmpl":
+                        return e2eTestsTemplate, nil
+                case "playwright.config.ts.tmpl":
+                        return playwrightConfigTemplate, nil
                 default:
                         return "", fmt.Errorf("template %s not found", name)
                 }
@@ -121,6 +125,20 @@ func (r *TypeScriptTemplateRenderer) Render(contract *ir.ContractIR) (map[string
                 return nil, fmt.Errorf("failed to render README.md: %w", err)
         }
         files["README.md"] = readme
+
+        // Generate e2e tests
+        e2eTests, err := r.renderE2ETests(contract)
+        if err != nil {
+                return nil, fmt.Errorf("failed to render e2e tests: %w", err)
+        }
+        files["inspector-e2e/e2e-tests.spec.ts"] = e2eTests
+
+        // Generate playwright config
+        playwrightConfig, err := r.renderPlaywrightConfig(contract)
+        if err != nil {
+                return nil, fmt.Errorf("failed to render playwright config: %w", err)
+        }
+        files["playwright.config.ts"] = playwrightConfig
 
         return files, nil
 }
@@ -220,8 +238,112 @@ func (r *TypeScriptTemplateRenderer) renderReadme(contract *ir.ContractIR) ([]by
         return buf.Bytes(), nil
 }
 
+// renderE2ETests generates the e2e tests file
+func (r *TypeScriptTemplateRenderer) renderE2ETests(contract *ir.ContractIR) ([]byte, error) {
+        // Load the template
+        templateContent, err := r.loadTemplate("inspector-e2e/e2e-tests.spec.ts.tmpl")
+        if err != nil {
+                return nil, err
+        }
+        
+        // Create a template with sprig functions
+        tmpl := template.New("e2e-tests.spec.ts").Funcs(getFuncMap())
+
+        // Parse the template
+        tmpl, err = tmpl.Parse(templateContent)
+        if err != nil {
+                return nil, err
+        }
+
+        // Execute the template
+        var buf bytes.Buffer
+        if err := tmpl.Execute(&buf, contract); err != nil {
+                return nil, err
+        }
+
+        return buf.Bytes(), nil
+}
+
+// renderPlaywrightConfig generates the playwright.config.ts file
+func (r *TypeScriptTemplateRenderer) renderPlaywrightConfig(contract *ir.ContractIR) ([]byte, error) {
+        // Load the template
+        templateContent, err := r.loadTemplate("playwright.config.ts.tmpl")
+        if err != nil {
+                return nil, err
+        }
+        
+        // Create a template with sprig functions
+        tmpl := template.New("playwright.config.ts").Funcs(getFuncMap())
+
+        // Parse the template
+        tmpl, err = tmpl.Parse(templateContent)
+        if err != nil {
+                return nil, err
+        }
+
+        // Execute the template
+        var buf bytes.Buffer
+        if err := tmpl.Execute(&buf, contract); err != nil {
+                return nil, err
+        }
+
+        return buf.Bytes(), nil
+}
+
 // Fallback templates in case the files don't exist
 // These are kept for backward compatibility
+
+// e2eTestsTemplate is the template for e2e-tests.spec.ts
+const e2eTestsTemplate = `import { test, expect } from '@playwright/test';
+
+test.describe('MCP Server Tests', () => {
+  test.beforeEach(async ({ page }) => {
+    // Navigate to the MCP Inspector
+    await page.goto('/');
+    
+    // Click the Connect button
+    await page.getByRole('button', { name: 'Connect' }).click();
+    await expect(page.getByText('Connected')).toBeVisible();
+    
+    // Click the List Tools button
+    await page.getByRole('button', { name: 'List Tools' }).click();
+  });
+
+  test('should list available tools', async ({ page }) => {
+    // Check if tools are listed
+    await expect(page.getByText('Tool List')).toBeVisible();
+  });
+});`
+
+// playwrightConfigTemplate is the template for playwright.config.ts
+const playwrightConfigTemplate = `import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './inspector-e2e',
+  fullyParallel: false,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 3 : 2,
+  workers: 1,
+  reporter: 'html',
+  use: {
+    baseURL: "http://localhost:6274",
+    trace: 'on-first-retry',
+    navigationTimeout: 60000,
+    actionTimeout: 30000,
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+  webServer: {
+    command: "npx @modelcontextprotocol/inspector node ./dist/server.js",
+    url: "http://localhost:6274",
+    reuseExistingServer: !process.env.CI,
+    timeout: 180000,
+  },
+});`
 
 // packageJSONTemplate is the template for package.json
 const packageJSONTemplate = `{
@@ -505,6 +627,30 @@ npm start
 ` + "```" + `
 
 The server uses stdio for communication with MCP clients.
+
+## Testing
+
+This server comes with end-to-end tests that verify its functionality using the MCP Inspector.
+
+1. Install Playwright dependencies:
+   ` + "```bash" + `
+   npm run test:install
+   ` + "```" + `
+
+2. Run the tests:
+   ` + "```bash" + `
+   npm test
+   ` + "```" + `
+
+3. View the test report:
+   ` + "```bash" + `
+   npm run test:report
+   ` + "```" + `
+
+4. Run tests with UI:
+   ` + "```bash" + `
+   npm run test:ui
+   ` + "```" + `
 
 ## Contract Information
 
