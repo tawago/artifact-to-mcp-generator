@@ -1,0 +1,155 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "values",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "sumArray",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "age",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "wallet",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct DataTypes.Person",
+        "name": "person",
+        "type": "tuple"
+      }
+    ],
+    "name": "processPerson",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "age",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "wallet",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct DataTypes.Person[]",
+        "name": "people",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "processPeople",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[3]",
+        "name": "fixedArray",
+        "type": "uint256[3]"
+      }
+    ],
+    "name": "sumFixedArray",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "uint256",
+                "name": "age",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct DataTypes.BasicInfo",
+            "name": "info",
+            "type": "tuple"
+          },
+          {
+            "internalType": "address[]",
+            "name": "wallets",
+            "type": "address[]"
+          }
+        ],
+        "internalType": "struct DataTypes.NestedStruct",
+        "name": "data",
+        "type": "tuple"
+      }
+    ],
+    "name": "processNestedStruct",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  }
+]
