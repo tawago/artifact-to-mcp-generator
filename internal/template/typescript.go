@@ -1,293 +1,293 @@
 package template
 
 import (
-        "bytes"
-        "fmt"
-        "io/ioutil"
-        "os"
-        "path/filepath"
-        "strings"
-        "text/template"
+	"bytes"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"text/template"
 
-        "github.com/Masterminds/sprig/v3"
-        "github.com/openhands/mcp-generator/internal/ir"
+	"github.com/Masterminds/sprig/v3"
+	"github.com/openhands/mcp-generator/internal/ir"
 )
 
 // TypeScriptTemplateRenderer renders TypeScript MCP server templates
 type TypeScriptTemplateRenderer struct {
-        // Template directory path
-        templateDir string
+	// Template directory path
+	templateDir string
 }
 
 // NewTypeScriptTemplateRenderer creates a new TypeScript template renderer
 func NewTypeScriptTemplateRenderer() *TypeScriptTemplateRenderer {
-        // Default to the embedded templates if not specified
-        return &TypeScriptTemplateRenderer{
-                templateDir: filepath.Join("internal", "template", "typescript"),
-        }
+	// Default to the embedded templates if not specified
+	return &TypeScriptTemplateRenderer{
+		templateDir: filepath.Join("internal", "template", "typescript"),
+	}
 }
 
 // WithTemplateDir sets a custom template directory
 func (r *TypeScriptTemplateRenderer) WithTemplateDir(dir string) *TypeScriptTemplateRenderer {
-        r.templateDir = dir
-        return r
+	r.templateDir = dir
+	return r
 }
 
 // getFuncMap returns a template FuncMap with custom functions
 func getFuncMap() template.FuncMap {
-        funcMap := sprig.FuncMap()
-        
-        // Add custom functions
-        funcMap["sub"] = func(a, b int) int {
-                return a - b
-        }
-        
-        funcMap["eq"] = func(a, b interface{}) bool {
-                return a == b
-        }
-        
-        funcMap["upper"] = func(s string) string {
-                return strings.ToUpper(s)
-        }
-        
-        funcMap["title"] = func(s string) string {
-                if len(s) == 0 {
-                        return s
-                }
-                return strings.ToTitle(string(s[0])) + s[1:]
-        }
-        
-        return funcMap
+	funcMap := sprig.FuncMap()
+
+	// Add custom functions
+	funcMap["sub"] = func(a, b int) int {
+		return a - b
+	}
+
+	funcMap["eq"] = func(a, b interface{}) bool {
+		return a == b
+	}
+
+	funcMap["upper"] = func(s string) string {
+		return strings.ToUpper(s)
+	}
+
+	funcMap["title"] = func(s string) string {
+		if len(s) == 0 {
+			return s
+		}
+		return strings.ToTitle(string(s[0])) + s[1:]
+	}
+
+	return funcMap
 }
 
 // loadTemplate loads a template file from the template directory
 func (r *TypeScriptTemplateRenderer) loadTemplate(name string) (string, error) {
-        templatePath := filepath.Join(r.templateDir, name)
-        
-        // Check if the file exists
-        if _, err := os.Stat(templatePath); os.IsNotExist(err) {
-                // Fall back to embedded templates if file doesn't exist
-                switch name {
-                case "package.json.tmpl":
-                        return packageJSONTemplate, nil
-                case "tsconfig.json.tmpl":
-                        return tsconfigJSONTemplate, nil
-                case "server.ts.tmpl":
-                        return serverTSTemplate, nil
-                case "README.md.tmpl":
-                        return readmeTemplate, nil
-                case "inspector-e2e/e2e-tests.spec.ts.tmpl":
-                        return e2eTestsTemplate, nil
-                case "playwright.config.ts.tmpl":
-                        return playwrightConfigTemplate, nil
-                default:
-                        return "", fmt.Errorf("template %s not found", name)
-                }
-        }
-        
-        // Read the template file
-        content, err := ioutil.ReadFile(templatePath)
-        if err != nil {
-                return "", fmt.Errorf("failed to read template %s: %w", name, err)
-        }
-        
-        return string(content), nil
+	templatePath := filepath.Join(r.templateDir, name)
+
+	// Check if the file exists
+	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
+		// Fall back to embedded templates if file doesn't exist
+		switch name {
+		case "package.json.tmpl":
+			return packageJSONTemplate, nil
+		case "tsconfig.json.tmpl":
+			return tsconfigJSONTemplate, nil
+		case "server.ts.tmpl":
+			return serverTSTemplate, nil
+		case "README.md.tmpl":
+			return readmeTemplate, nil
+		case "inspector-e2e/e2e-tests.spec.ts.tmpl":
+			return e2eTestsTemplate, nil
+		case "playwright.config.ts.tmpl":
+			return playwrightConfigTemplate, nil
+		default:
+			return "", fmt.Errorf("template %s not found", name)
+		}
+	}
+
+	// Read the template file
+	content, err := ioutil.ReadFile(templatePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read template %s: %w", name, err)
+	}
+
+	return string(content), nil
 }
 
 // Render generates a TypeScript MCP server from the IR
 func (r *TypeScriptTemplateRenderer) Render(contract *ir.ContractIR) (map[string][]byte, error) {
-        files := make(map[string][]byte)
+	files := make(map[string][]byte)
 
-        // Generate package.json
-        packageJSON, err := r.renderPackageJSON(contract)
-        if err != nil {
-                return nil, fmt.Errorf("failed to render package.json: %w", err)
-        }
-        files["package.json"] = packageJSON
+	// Generate package.json
+	packageJSON, err := r.renderPackageJSON(contract)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render package.json: %w", err)
+	}
+	files["package.json"] = packageJSON
 
-        // Generate tsconfig.json
-        tsconfigJSON, err := r.renderTSConfigJSON(contract)
-        if err != nil {
-                return nil, fmt.Errorf("failed to render tsconfig.json: %w", err)
-        }
-        files["tsconfig.json"] = tsconfigJSON
+	// Generate tsconfig.json
+	tsconfigJSON, err := r.renderTSConfigJSON(contract)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render tsconfig.json: %w", err)
+	}
+	files["tsconfig.json"] = tsconfigJSON
 
-        // Generate main server file
-        serverTS, err := r.renderServerTS(contract)
-        if err != nil {
-                return nil, fmt.Errorf("failed to render server.ts: %w", err)
-        }
-        files["src/server.ts"] = serverTS
+	// Generate main server file
+	serverTS, err := r.renderServerTS(contract)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render server.ts: %w", err)
+	}
+	files["src/server.ts"] = serverTS
 
-        // Generate README.md
-        readme, err := r.renderReadme(contract)
-        if err != nil {
-                return nil, fmt.Errorf("failed to render README.md: %w", err)
-        }
-        files["README.md"] = readme
+	// Generate README.md
+	readme, err := r.renderReadme(contract)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render README.md: %w", err)
+	}
+	files["README.md"] = readme
 
-        // Generate e2e tests
-        e2eTests, err := r.renderE2ETests(contract)
-        if err != nil {
-                return nil, fmt.Errorf("failed to render e2e tests: %w", err)
-        }
-        files["inspector-e2e/e2e-tests.spec.ts"] = e2eTests
+	// Generate e2e tests
+	e2eTests, err := r.renderE2ETests(contract)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render e2e tests: %w", err)
+	}
+	files["inspector-e2e/e2e-tests.spec.ts"] = e2eTests
 
-        // Generate playwright config
-        playwrightConfig, err := r.renderPlaywrightConfig(contract)
-        if err != nil {
-                return nil, fmt.Errorf("failed to render playwright config: %w", err)
-        }
-        files["playwright.config.ts"] = playwrightConfig
+	// Generate playwright config
+	playwrightConfig, err := r.renderPlaywrightConfig(contract)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render playwright config: %w", err)
+	}
+	files["playwright.config.ts"] = playwrightConfig
 
-        return files, nil
+	return files, nil
 }
 
 // renderPackageJSON generates the package.json file
 func (r *TypeScriptTemplateRenderer) renderPackageJSON(contract *ir.ContractIR) ([]byte, error) {
-        // Load the template
-        templateContent, err := r.loadTemplate("package.json.tmpl")
-        if err != nil {
-                return nil, err
-        }
-        
-        // Parse the template
-        tmpl, err := template.New("package.json").Funcs(getFuncMap()).Parse(templateContent)
-        if err != nil {
-                return nil, err
-        }
+	// Load the template
+	templateContent, err := r.loadTemplate("package.json.tmpl")
+	if err != nil {
+		return nil, err
+	}
 
-        var buf bytes.Buffer
-        err = tmpl.Execute(&buf, contract)
-        if err != nil {
-                return nil, err
-        }
+	// Parse the template
+	tmpl, err := template.New("package.json").Funcs(getFuncMap()).Parse(templateContent)
+	if err != nil {
+		return nil, err
+	}
 
-        return buf.Bytes(), nil
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, contract)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // renderTSConfigJSON generates the tsconfig.json file
 func (r *TypeScriptTemplateRenderer) renderTSConfigJSON(contract *ir.ContractIR) ([]byte, error) {
-        // Load the template
-        templateContent, err := r.loadTemplate("tsconfig.json.tmpl")
-        if err != nil {
-                return nil, err
-        }
-        
-        // Parse the template
-        tmpl, err := template.New("tsconfig.json").Funcs(getFuncMap()).Parse(templateContent)
-        if err != nil {
-                return nil, err
-        }
+	// Load the template
+	templateContent, err := r.loadTemplate("tsconfig.json.tmpl")
+	if err != nil {
+		return nil, err
+	}
 
-        var buf bytes.Buffer
-        err = tmpl.Execute(&buf, contract)
-        if err != nil {
-                return nil, err
-        }
+	// Parse the template
+	tmpl, err := template.New("tsconfig.json").Funcs(getFuncMap()).Parse(templateContent)
+	if err != nil {
+		return nil, err
+	}
 
-        return buf.Bytes(), nil
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, contract)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // renderServerTS generates the main server.ts file
 func (r *TypeScriptTemplateRenderer) renderServerTS(contract *ir.ContractIR) ([]byte, error) {
-        // Load the template
-        templateContent, err := r.loadTemplate("server.ts.tmpl")
-        if err != nil {
-                return nil, err
-        }
-        
-        // Parse the template
-        tmpl, err := template.New("server.ts").Funcs(getFuncMap()).Parse(templateContent)
-        if err != nil {
-                return nil, err
-        }
+	// Load the template
+	templateContent, err := r.loadTemplate("server.ts.tmpl")
+	if err != nil {
+		return nil, err
+	}
 
-        var buf bytes.Buffer
-        err = tmpl.Execute(&buf, contract)
-        if err != nil {
-                return nil, err
-        }
+	// Parse the template
+	tmpl, err := template.New("server.ts").Funcs(getFuncMap()).Parse(templateContent)
+	if err != nil {
+		return nil, err
+	}
 
-        return buf.Bytes(), nil
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, contract)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // renderReadme generates the README.md file
 func (r *TypeScriptTemplateRenderer) renderReadme(contract *ir.ContractIR) ([]byte, error) {
-        // Load the template
-        templateContent, err := r.loadTemplate("README.md.tmpl")
-        if err != nil {
-                return nil, err
-        }
-        
-        // Create a template with sprig functions
-        tmpl := template.New("README.md").Funcs(getFuncMap())
+	// Load the template
+	templateContent, err := r.loadTemplate("README.md.tmpl")
+	if err != nil {
+		return nil, err
+	}
 
-        // Parse the template
-        tmpl, err = tmpl.Parse(templateContent)
-        if err != nil {
-                return nil, err
-        }
+	// Create a template with sprig functions
+	tmpl := template.New("README.md").Funcs(getFuncMap())
 
-        // Execute the template
-        var buf bytes.Buffer
-        if err := tmpl.Execute(&buf, contract); err != nil {
-                return nil, err
-        }
+	// Parse the template
+	tmpl, err = tmpl.Parse(templateContent)
+	if err != nil {
+		return nil, err
+	}
 
-        return buf.Bytes(), nil
+	// Execute the template
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, contract); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // renderE2ETests generates the e2e tests file
 func (r *TypeScriptTemplateRenderer) renderE2ETests(contract *ir.ContractIR) ([]byte, error) {
-        // Load the template
-        templateContent, err := r.loadTemplate("inspector-e2e/e2e-tests.spec.ts.tmpl")
-        if err != nil {
-                return nil, err
-        }
-        
-        // Create a template with sprig functions
-        tmpl := template.New("e2e-tests.spec.ts").Funcs(getFuncMap())
+	// Load the template
+	templateContent, err := r.loadTemplate("inspector-e2e/e2e-tests.spec.ts.tmpl")
+	if err != nil {
+		return nil, err
+	}
 
-        // Parse the template
-        tmpl, err = tmpl.Parse(templateContent)
-        if err != nil {
-                return nil, err
-        }
+	// Create a template with sprig functions
+	tmpl := template.New("e2e-tests.spec.ts").Funcs(getFuncMap())
 
-        // Execute the template
-        var buf bytes.Buffer
-        if err := tmpl.Execute(&buf, contract); err != nil {
-                return nil, err
-        }
+	// Parse the template
+	tmpl, err = tmpl.Parse(templateContent)
+	if err != nil {
+		return nil, err
+	}
 
-        return buf.Bytes(), nil
+	// Execute the template
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, contract); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // renderPlaywrightConfig generates the playwright.config.ts file
 func (r *TypeScriptTemplateRenderer) renderPlaywrightConfig(contract *ir.ContractIR) ([]byte, error) {
-        // Load the template
-        templateContent, err := r.loadTemplate("playwright.config.ts.tmpl")
-        if err != nil {
-                return nil, err
-        }
-        
-        // Create a template with sprig functions
-        tmpl := template.New("playwright.config.ts").Funcs(getFuncMap())
+	// Load the template
+	templateContent, err := r.loadTemplate("playwright.config.ts.tmpl")
+	if err != nil {
+		return nil, err
+	}
 
-        // Parse the template
-        tmpl, err = tmpl.Parse(templateContent)
-        if err != nil {
-                return nil, err
-        }
+	// Create a template with sprig functions
+	tmpl := template.New("playwright.config.ts").Funcs(getFuncMap())
 
-        // Execute the template
-        var buf bytes.Buffer
-        if err := tmpl.Execute(&buf, contract); err != nil {
-                return nil, err
-        }
+	// Parse the template
+	tmpl, err = tmpl.Parse(templateContent)
+	if err != nil {
+		return nil, err
+	}
 
-        return buf.Bytes(), nil
+	// Execute the template
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, contract); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // Fallback templates in case the files don't exist
@@ -422,8 +422,8 @@ enum ToolName {
 {{- if not $func.IsFallback -}}
 {{- if not $func.IsReceive }}
 const {{$func.Name | title}}Schema = z.object({
-{{- range $func.Inputs}}
-  {{.Name}}: z.string().describe("{{.Description}}"),
+{{- range $index, $param := $func.Inputs}}
+  {{if eq .Name ""}}param{{$index}}{{else}}{{.Name}}{{end}}: z.string().describe("{{.Description}}"),
 {{- end}}
 });
 {{end -}}
@@ -535,7 +535,7 @@ async function main() {
           const {{$func.Name}}Args = {{$func.Name | title}}Schema.parse(args);
           const {{$func.Name}}Result = await contract.{{$func.Name}}(
             {{- range $index, $param := $func.Inputs -}}
-            {{if $index}}, {{end}}{{$func.Name}}Args.{{$param.Name}}
+            {{if $index}}, {{end}}{{$func.Name}}Args.{{if eq $param.Name ""}}param{{$index}}{{else}}{{$param.Name}}{{end}}
             {{- end -}}
           );
           return {

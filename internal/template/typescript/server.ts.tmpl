@@ -34,7 +34,7 @@ enum ToolName {
 {{- if $func.Inputs }}
 export interface {{$func.Name | title}}Params {
 {{- range $paramIndex, $param := $func.Inputs}}
-  {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
+  {{if eq $param.Name ""}}param{{$paramIndex}}{{else}}{{$param.Name}}{{end}}: {{if eq $param.Type.BaseType "address" -}}
     string
   {{- else if eq $param.Type.BaseType "uint256" -}}
     string
@@ -99,7 +99,7 @@ export interface {{$func.Name | title}}Result {
 {{- if $func.Inputs }}
 export interface {{$func.Name | title}}Params {
 {{- range $paramIndex, $param := $func.Inputs}}
-  {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
+  {{if eq $param.Name ""}}param{{$paramIndex}}{{else}}{{$param.Name}}{{end}}: {{if eq $param.Type.BaseType "address" -}}
     string
   {{- else if eq $param.Type.BaseType "uint256" -}}
     string
@@ -169,7 +169,7 @@ export interface {{$func.Name | title}}Result {
 
 const {{$func.Name | title}}Schema = z.object({
 {{- range $paramIndex, $param := $func.Inputs}}
-  {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
+  {{if eq $param.Name ""}}param{{$paramIndex}}{{else}}{{$param.Name}}{{end}}: {{if eq $param.Type.BaseType "address" -}}
     z.string().describe("{{$param.Description}}")
   {{- else if eq $param.Type.BaseType "uint256" -}}
     z.string().describe("{{$param.Description}}")
@@ -205,7 +205,7 @@ const {{$func.Name | title}}Schema = z.object({
 
 const {{$func.Name | title}}Schema = z.object({
 {{- range $paramIndex, $param := $func.Inputs}}
-  {{$param.Name}}: {{if eq $param.Type.BaseType "address" -}}
+  {{if eq $param.Name ""}}param{{$paramIndex}}{{else}}{{$param.Name}}{{end}}: {{if eq $param.Type.BaseType "address" -}}
     z.string().describe("{{$param.Description}}")
   {{- else if eq $param.Type.BaseType "uint256" -}}
     z.string().describe("{{$param.Description}}")
@@ -409,18 +409,18 @@ async function main() {
               const processedArgs: any[] = [];
               {{- range $index, $param := $func.Inputs}}
               {{- if or $param.Type.IsArray (eq $param.Type.BaseType "tuple")}}
-              // Process {{$param.Name}} ({{$param.Type.BaseType}}{{if $param.Type.IsArray}}{{if $param.Type.ArraySize}}[{{$param.Type.ArraySize}}]{{else}}[]{{end}}{{end}})
-              if (typeof {{$func.Name}}Args.{{$param.Name}} === 'string') {
+              // Process {{if eq $param.Name ""}}param{{$index}}{{else}}{{$param.Name}}{{end}} ({{$param.Type.BaseType}}{{if $param.Type.IsArray}}{{if $param.Type.ArraySize}}[{{$param.Type.ArraySize}}]{{else}}[]{{end}}{{end}})
+              if (typeof {{$func.Name}}Args.{{if eq $param.Name ""}}param{{$index}}{{else}}{{$param.Name}}{{end}} === 'string') {
                 try {
-                  processedArgs.push(JSON.parse({{$func.Name}}Args.{{$param.Name}}));
+                  processedArgs.push(JSON.parse({{$func.Name}}Args.{{if eq $param.Name ""}}param{{$index}}{{else}}{{$param.Name}}{{end}}));
                 } catch (e) {
-                  processedArgs.push({{$func.Name}}Args.{{$param.Name}});
+                  processedArgs.push({{$func.Name}}Args.{{if eq $param.Name ""}}param{{$index}}{{else}}{{$param.Name}}{{end}});
                 }
               } else {
-                processedArgs.push({{$func.Name}}Args.{{$param.Name}});
+                processedArgs.push({{$func.Name}}Args.{{if eq $param.Name ""}}param{{$index}}{{else}}{{$param.Name}}{{end}});
               }
               {{- else}}
-              processedArgs.push({{$func.Name}}Args.{{$param.Name}});
+              processedArgs.push({{$func.Name}}Args.{{if eq $param.Name ""}}param{{$index}}{{else}}{{$param.Name}}{{end}});
               {{- end}}
               {{- end}}
               
