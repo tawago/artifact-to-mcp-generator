@@ -121,11 +121,31 @@ func TestTypeScriptTemplateRendererWithCustomDir(t *testing.T) {
         }
         defer os.RemoveAll(tempDir)
 
-        // Create a minimal test template
+        // Create test templates
         testTemplate := `Test template for {{.Metadata.Name}}`
-        err = os.WriteFile(filepath.Join(tempDir, "package.json.tmpl"), []byte(testTemplate), 0644)
+        templates := map[string]string{
+                "package.json.tmpl": testTemplate,
+                "tsconfig.json.tmpl": testTemplate,
+                "server.ts.tmpl": testTemplate,
+                "README.md.tmpl": testTemplate,
+                "playwright.config.ts.tmpl": testTemplate,
+        }
+
+        // Create inspector-e2e directory
+        err = os.MkdirAll(filepath.Join(tempDir, "inspector-e2e"), 0755)
         if err != nil {
-                t.Fatalf("Failed to write test template: %v", err)
+                t.Fatalf("Failed to create inspector-e2e directory: %v", err)
+        }
+
+        // Create e2e test template
+        templates["inspector-e2e/e2e-tests.spec.ts.tmpl"] = testTemplate
+
+        // Write all templates
+        for name, content := range templates {
+                err = os.WriteFile(filepath.Join(tempDir, name), []byte(content), 0644)
+                if err != nil {
+                        t.Fatalf("Failed to write template %s: %v", name, err)
+                }
         }
 
         // Create a sample contract IR

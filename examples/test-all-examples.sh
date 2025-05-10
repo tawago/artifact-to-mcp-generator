@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit on error
+set -e
+
 # Create extracted directory if it doesn't exist
 mkdir -p extracted
 
