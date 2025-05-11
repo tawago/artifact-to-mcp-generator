@@ -15,6 +15,16 @@ test.describe('MCP Server Tests', () => {
 
   test('should list available tools', async ({ page }) => {
     // Check if tools are listed
-    await expect(page.getByText('Tool List')).toBeVisible();
+    {{- range $funcIndex, $func := .Functions -}}
+    {{- if not $func.IsConstructor -}}
+    {{- if not $func.IsFallback -}}
+    {{- if not $func.IsReceive -}}
+    {{- if or (eq (printf "%s" $func.StateMutability) "view") (eq (printf "%s" $func.StateMutability) "pure") }}
+    await expect(page.getByText('{{$func.Name}}', { exact: true })).toBeVisible();
+    {{- end -}}
+    {{- end -}}
+    {{- end -}}
+    {{- end -}}
+    {{- end }}
   });
 });
